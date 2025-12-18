@@ -1,0 +1,25 @@
+{
+  "name": "campus-companion",
+  "version": "1.0.0",
+  "description": "Campus management app with MERN Stack and Web3 blockchain",
+  "scripts": {
+    "install:all": "npm run install:server && npm run install:client && npm run install:blockchain",
+    "install:server": "cd server && npm install",
+    "install:client": "cd client && npm install",
+    "install:blockchain": "cd blockchain && npm install",
+    "start:server": "cd server && npm run dev",
+    "start:client": "cd client && npm start",
+    "blockchain:compile": "cd blockchain && npx hardhat compile",
+    "blockchain:deploy": "cd blockchain && npx hardhat run scripts/deploy.js --network mumbai",
+    "blockchain:test": "cd blockchain && npx hardhat test"
+  },
+  "keywords": [
+    "campus",
+    "mern",
+    "blockchain",
+    "web3",
+    "education"
+  ],
+  "author": "",
+  "license": "MIT"
+}
