@@ -25,10 +25,89 @@ import PrivateRoute from './components/PrivateRoute';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2',
+      main: '#1e3a5f', // Dark navy blue
+      light: '#2c5282', // Medium blue
+      dark: '#0f2744', // Darker navy
+      contrastText: '#fff',
     },
     secondary: {
-      main: '#dc004e',
+      main: '#2d6a7d', // Teal
+      light: '#3d8ba3',
+      dark: '#1e4a5a',
+      contrastText: '#fff',
+    },
+    background: {
+      default: '#f5f5f5', // Light gray
+      paper: '#ffffff',
+    },
+    info: {
+      main: '#2c5282', // Medium blue
+    },
+    success: {
+      main: '#2d6a7d', // Teal
+    },
+  },
+  typography: {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    h1: {
+      fontWeight: 600,
+      color: '#1e3a5f',
+    },
+    h2: {
+      fontWeight: 600,
+      color: '#1e3a5f',
+    },
+    h3: {
+      fontWeight: 600,
+      color: '#1e3a5f',
+    },
+    h4: {
+      fontWeight: 600,
+      color: '#2c5282',
+    },
+    h5: {
+      fontWeight: 500,
+      color: '#2c5282',
+    },
+    h6: {
+      fontWeight: 500,
+      color: '#2d6a7d',
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          textTransform: 'none',
+          fontWeight: 500,
+        },
+        contained: {
+          boxShadow: '0 4px 12px rgba(30, 58, 95, 0.15)',
+          '&:hover': {
+            boxShadow: '0 6px 16px rgba(30, 58, 95, 0.25)',
+          },
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          boxShadow: '0 2px 8px rgba(30, 58, 95, 0.08)',
+        },
+        elevation3: {
+          boxShadow: '0 4px 16px rgba(30, 58, 95, 0.12)',
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          boxShadow: '0 2px 8px rgba(30, 58, 95, 0.08)',
+        },
+      },
     },
   },
 });

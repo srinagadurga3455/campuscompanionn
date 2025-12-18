@@ -35,21 +35,41 @@ const StudentDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch events
+      // Fetch events (automatically filtered by department on backend)
       const eventsRes = await api.get('/events?upcoming=true');
-      setUpcomingEvents(eventsRes.data.events.slice(0, 3));
+      const myEvents = eventsRes.data.events || [];
+      setUpcomingEvents(myEvents.slice(0, 3));
       
-      // Fetch assignments
+      // Fetch assignments (filtered by department and year)
       const assignmentsRes = await api.get('/assignments');
-      setRecentAssignments(assignmentsRes.data.assignments.slice(0, 3));
+      const myAssignments = assignmentsRes.data.assignments || [];
+      setRecentAssignments(myAssignments.slice(0, 3));
+      
+      // Count pending assignments
+      const pending = myAssignments.filter(a => {
+        const mySubmission = a.submissions?.find(s => s.student === user?.id);
+        return !mySubmission || mySubmission.status === 'pending';
+      }).length;
       
       // Fetch certificates
       const certsRes = await api.get('/certificates');
-      setStats(prev => ({ ...prev, certificates: certsRes.data.certificates.length }));
-
+      const certs = certsRes.data.certificates || [];
+      
       // Fetch badges
       const badgesRes = await api.get('/badges');
-      setStats(prev => ({ ...prev, badges: badgesRes.data.badges.length }));
+      const badges = badgesRes.data.badges || [];
+      
+      // Count registered events
+      const registeredEvents = myEvents.filter(e => 
+        e.participants?.some(p => p._id === user?.id)
+      ).length;
+      
+      setStats({
+        eventsRegistered: registeredEvents,
+        assignmentsPending: pending,
+        certificates: certs.length,
+        badges: badges.length,
+      });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     }

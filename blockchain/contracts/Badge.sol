@@ -3,15 +3,13 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 
 /**
  * @title Badge
  * @dev NFT-based badge system for campus achievements and skills
  */
 contract Badge is ERC721, Ownable {
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIdCounter;
+    uint256 private _tokenIdCounter;
 
     struct BadgeData {
         string recipient;       // Student blockchain ID
@@ -53,8 +51,8 @@ contract Badge is ERC721, Ownable {
         string memory _badgeType,
         string memory _imageUrl
     ) public onlyOwner returns (uint256) {
-        uint256 tokenId = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
+        uint256 tokenId = _tokenIdCounter;
+        _tokenIdCounter++;
 
         // Mint NFT to contract owner (college)
         _safeMint(owner(), tokenId);
@@ -119,7 +117,7 @@ contract Badge is ERC721, Ownable {
      * @dev Get total badges issued
      */
     function getTotalBadges() public view returns (uint256) {
-        return _tokenIdCounter.current();
+        return _tokenIdCounter;
     }
 
     /**

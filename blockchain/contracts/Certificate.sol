@@ -4,15 +4,13 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 
 /**
  * @title Certificate
  * @dev NFT-based certificate issuance system for campus events and achievements
  */
 contract Certificate is ERC721, ERC721URIStorage, Ownable {
-    using Counters for Counters.Counter;
-    Counters.Counter private _tokenIdCounter;
+    uint256 private _tokenIdCounter;
 
     struct CertificateData {
         string recipient;          // Student blockchain ID
@@ -54,8 +52,8 @@ contract Certificate is ERC721, ERC721URIStorage, Ownable {
         string memory _description,
         string memory _certificateType
     ) public onlyOwner returns (uint256) {
-        uint256 tokenId = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
+        uint256 tokenId = _tokenIdCounter;
+        _tokenIdCounter++;
 
         // Mint NFT to contract owner (college)
         _safeMint(owner(), tokenId);
@@ -134,7 +132,7 @@ contract Certificate is ERC721, ERC721URIStorage, Ownable {
      * @dev Get total certificates issued
      */
     function getTotalCertificates() public view returns (uint256) {
-        return _tokenIdCounter.current();
+        return _tokenIdCounter;
     }
 
     // Override required functions

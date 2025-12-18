@@ -240,7 +240,8 @@ const Register = () => {
                 onChange={handleChange}
                 margin="normal"
                 required
-                helperText="Include country code (e.g., +91xxxxxxxxxx)"
+                helperText="10 digit mobile number (e.g., 9876543210)"
+                inputProps={{ maxLength: 10, pattern: "[0-9]*" }}
               />
               <TextField
                 fullWidth

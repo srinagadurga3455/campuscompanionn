@@ -35,9 +35,14 @@ const FacultyDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await api.get('/assignments');
-      const assignmentsData = response.data.assignments;
+      // Fetch assignments for this faculty member (department filtered)
+      const assignmentsRes = await api.get('/assignments');
+      const assignmentsData = assignmentsRes.data.assignments;
       setAssignments(assignmentsData);
+      
+      // Fetch students from faculty's department
+      const studentsRes = await api.get('/users/students');
+      const studentsCount = studentsRes.data.count || 0;
       
       const pendingCount = assignmentsData.reduce((acc, assignment) => {
         return acc + assignment.submissions.filter(s => s.status === 'submitted').length;
@@ -45,7 +50,7 @@ const FacultyDashboard = () => {
 
       setStats({
         totalAssignments: assignmentsData.length,
-        totalStudents: 0, // Would need separate API call
+        totalStudents: studentsCount,
         pendingGrading: pendingCount,
       });
     } catch (error) {
@@ -60,6 +65,9 @@ const FacultyDashboard = () => {
         <Paper sx={{ p: 3, mb: 3 }}>
           <Typography variant="h4" gutterBottom>
             Welcome, Prof. {user?.name}!
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Department: {user?.department?.name || 'Not Assigned'}
           </Typography>
         </Paper>
 
