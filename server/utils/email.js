@@ -85,13 +85,12 @@ const sendOTPEmail = async (email, otp, name) => {
 };
 
 // Send approval notification email
-const sendApprovalEmail = async (email, name, status) => {
+const sendApprovalEmail = async (email, name, blockchainId) => {
   try {
-    const isApproved = status === 'approved';
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'Campus Companion <noreply@campuscompanion.com>',
       to: email,
-      subject: `Registration ${isApproved ? 'Approved' : 'Rejected'} - Campus Companion`,
+      subject: 'Registration Approved - Campus Companion',
       html: `
         <!DOCTYPE html>
         <html>
@@ -99,9 +98,11 @@ const sendApprovalEmail = async (email, name, status) => {
           <style>
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: ${isApproved ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#dc3545'}; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .header { background: linear-gradient(135deg, #1e3a5f 0%, #2d6a7d 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
             .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-            .status-box { background: white; border-left: 4px solid ${isApproved ? '#28a745' : '#dc3545'}; padding: 20px; margin: 20px 0; border-radius: 4px; }
+            .status-box { background: white; border-left: 4px solid #28a745; padding: 20px; margin: 20px 0; border-radius: 4px; }
+            .id-box { background: #e8f5e9; border: 2px solid #28a745; padding: 15px; margin: 20px 0; text-align: center; border-radius: 8px; }
+            .blockchain-id { font-size: 24px; font-weight: bold; color: #1e3a5f; letter-spacing: 2px; }
             .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
           </style>
         </head>
@@ -109,30 +110,38 @@ const sendApprovalEmail = async (email, name, status) => {
           <div class="container">
             <div class="header">
               <h1>🎓 Campus Companion</h1>
-              <p>Registration Status Update</p>
+              <p>Registration Approved</p>
             </div>
             <div class="content">
               <h2>Hello ${name}!</h2>
               
               <div class="status-box">
-                <h3 style="margin: 0; color: ${isApproved ? '#28a745' : '#dc3545'};">
-                  ${isApproved ? '✅ Registration Approved!' : '❌ Registration Rejected'}
-                </h3>
+                <h3 style="margin: 0; color: #28a745;">✅ Welcome to Campus Companion!</h3>
               </div>
 
-              ${isApproved ? `
-                <p>Congratulations! Your registration has been approved by the college administration.</p>
-                <p><strong>Next Steps:</strong></p>
-                <ul>
-                  <li>Log in to your Campus Companion account</li>
-                  <li>Complete your profile setup</li>
-                  <li>Start exploring campus events and resources</li>
-                </ul>
-                <p>Your Student ID will be minted on the blockchain shortly.</p>
-              ` : `
-                <p>Unfortunately, your registration request has been rejected by the college administration.</p>
-                <p>If you believe this is an error, please contact the administration office for more information.</p>
-              `}
+              <p>Congratulations! Your registration has been approved by the college administration.</p>
+              
+              <div class="id-box">
+                <p style="margin: 0; font-size: 14px; color: #666;">Your Blockchain Student ID</p>
+                <div class="blockchain-id">${blockchainId}</div>
+                <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">Securely stored on blockchain</p>
+              </div>
+
+              <p><strong>Next Steps:</strong></p>
+              <ul>
+                <li>Log in to your Campus Companion account</li>
+                <li>Complete your profile setup</li>
+                <li>Explore campus events and resources</li>
+                <li>Connect with your department</li>
+              </ul>
+
+              <p><strong>Your Benefits:</strong></p>
+              <ul>
+                <li>📚 Access assignments and course materials</li>
+                <li>📅 Register for campus events</li>
+                <li>🏆 Earn digital certificates and badges</li>
+                <li>🎯 Track your academic progress</li>
+              </ul>
               
               <p style="margin-top: 30px;">
                 Best regards,<br>
@@ -153,12 +162,88 @@ const sendApprovalEmail = async (email, name, status) => {
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('Error sending approval email:', error);
-    throw new Error('Failed to send approval email');
+    return { success: false, error: error.message };
+  }
+};
+
+// Send rejection notification email
+const sendRejectionEmail = async (email, name, reason = '') => {
+  try {
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || 'Campus Companion <noreply@campuscompanion.com>',
+      to: email,
+      subject: 'Registration Status - Campus Companion',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #dc3545; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .status-box { background: white; border-left: 4px solid #dc3545; padding: 20px; margin: 20px 0; border-radius: 4px; }
+            .reason-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎓 Campus Companion</h1>
+              <p>Registration Status Update</p>
+            </div>
+            <div class="content">
+              <h2>Hello ${name},</h2>
+              
+              <div class="status-box">
+                <h3 style="margin: 0; color: #dc3545;">Registration Not Approved</h3>
+              </div>
+
+              <p>Unfortunately, your registration request has not been approved at this time.</p>
+              
+              ${reason ? `
+                <div class="reason-box">
+                  <strong>Reason:</strong><br>
+                  ${reason}
+                </div>
+              ` : ''}
+
+              <p><strong>What You Can Do:</strong></p>
+              <ul>
+                <li>Contact the college administration office for more information</li>
+                <li>Verify that all submitted information was correct</li>
+                <li>Reapply if eligibility criteria are met</li>
+              </ul>
+
+              <p>If you believe this is an error, please reach out to the administration team.</p>
+              
+              <p style="margin-top: 30px;">
+                Best regards,<br>
+                <strong>Campus Companion Team</strong>
+              </p>
+            </div>
+            <div class="footer">
+              <p>&copy; 2024 Campus Companion. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Rejection email sent:', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Error sending rejection email:', error);
+    return { success: false, error: error.message };
   }
 };
 
 module.exports = {
   generateOTP,
   sendOTPEmail,
-  sendApprovalEmail
+  sendApprovalEmail,
+  sendRejectionEmail
 };

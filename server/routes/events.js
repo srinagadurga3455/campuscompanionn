@@ -54,8 +54,8 @@ router.post('/', authMiddleware, roleMiddleware('club_admin', 'college_admin'), 
 
 // @route   GET /api/events
 // @desc    Get all events (with filters)
-// @access  Public (with auth for personalized data)
-router.get('/', async (req, res) => {
+// @access  Private
+router.get('/', authMiddleware, async (req, res) => {
   try {
     const { eventType, status, club, department, upcoming } = req.query;
     const filter = {};
@@ -64,6 +64,18 @@ router.get('/', async (req, res) => {
     if (status) filter.status = status;
     if (club) filter.club = club;
     if (department) filter.department = department;
+    
+    // Filter by authenticated user's department if they're student or faculty
+    if (req.user && (req.user.role === 'student' || req.user.role === 'faculty')) {
+      if (req.user.department) {
+        filter.$or = [
+          { department: req.user.department },
+          { department: null }, // College-wide events
+          { eventType: 'college' } // College events visible to all
+        ];
+      }
+    }
+    
     if (upcoming === 'true') {
       filter.startDate = { $gte: new Date() };
       filter.status = 'upcoming';

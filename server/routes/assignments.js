@@ -67,8 +67,11 @@ router.get('/', authMiddleware, async (req, res) => {
         ];
       }
     } else if (req.user.role === 'faculty') {
-      // Faculty see their own assignments
-      filter.faculty = req.user.id;
+      // Faculty see assignments from their department only
+      filter = {
+        faculty: req.user.id,
+        department: req.user.department
+      };
     }
 
     const assignments = await Assignment.find(filter)

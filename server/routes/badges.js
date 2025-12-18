@@ -44,20 +44,24 @@ router.post('/', authMiddleware, roleMiddleware('club_admin', 'college_admin'), 
     // Mint badge on blockchain
     try {
       const badgeContract = getBadgeContract();
-      const tx = await badgeContract.issueBadge(
-        recipientUser.blockchainId,
-        name,
-        badgeType,
-        imageUrl || ''
-      );
-      const receipt = await tx.wait();
+      if (badgeContract) {
+        const tx = await badgeContract.issueBadge(
+          recipientUser.blockchainId,
+          name,
+          badgeType,
+          imageUrl || ''
+        );
+        const receipt = await tx.wait();
 
-      // Get token ID from event logs
-      const tokenId = receipt.logs[0].topics[3];
+        // Get token ID from event logs
+        const tokenId = receipt.logs[0].topics[3];
 
-      badge.blockchainTxHash = tx.hash;
-      badge.blockchainTokenId = parseInt(tokenId, 16);
-      await badge.save();
+        badge.blockchainTxHash = tx.hash;
+        badge.blockchainTokenId = parseInt(tokenId, 16);
+        await badge.save();
+      } else {
+        console.log('Badge contract not deployed - stored in database only');
+      }
 
       console.log('Badge minted on blockchain:', tx.hash);
     } catch (blockchainError) {

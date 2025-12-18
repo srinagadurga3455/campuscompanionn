@@ -4,8 +4,37 @@ const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
 const roleMiddleware = require('../middleware/roleCheck');
 const { generateBlockchainId } = require('../utils/idGenerator');
-const { sendApprovalNotification, sendRejectionNotification } = require('../utils/whatsapp');
+const { sendApprovalEmail, sendRejectionEmail } = require('../utils/email');
 const { getStudentIdContract } = require('../config/blockchain');
+
+// @route   GET /api/users/students
+// @desc    Get students (filtered by department for faculty)
+// @access  Private (faculty, college_admin)
+router.get('/students', authMiddleware, roleMiddleware('faculty', 'college_admin'), async (req, res) => {
+  try {
+    const filter = { role: 'student', approvalStatus: 'approved' };
+    
+    // Faculty can only see students from their department
+    if (req.user.role === 'faculty' && req.user.department) {
+      filter.department = req.user.department;
+    }
+    
+    // Optional filters from query params
+    if (req.query.department) filter.department = req.query.department;
+    if (req.query.year) filter.year = parseInt(req.query.year);
+    if (req.query.classSection) filter.classSection = req.query.classSection;
+
+    const students = await User.find(filter)
+      .select('-password')
+      .populate('department', 'name code')
+      .sort({ yearOfAdmission: -1, name: 1 });
+
+    res.json({ success: true, students, count: students.length });
+  } catch (error) {
+    console.error('Get students error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
 // @route   GET /api/users/pending
 // @desc    Get all pending users (for admin approval)
@@ -64,8 +93,8 @@ router.put('/:id/approve', authMiddleware, roleMiddleware('college_admin'), asyn
     user.blockchainId = blockchainId;
     await user.save();
 
-    // Send WhatsApp notification
-    await sendApprovalNotification(user.phone, user.name, blockchainId);
+    // Send email notification
+    await sendApprovalEmail(user.email, user.name, blockchainId);
 
     res.json({
       success: true,
@@ -97,8 +126,8 @@ router.put('/:id/reject', authMiddleware, roleMiddleware('college_admin'), async
     user.approvalStatus = 'rejected';
     await user.save();
 
-    // Send WhatsApp notification
-    await sendRejectionNotification(user.phone, user.name, reason);
+    // Send email notification
+    await sendRejectionEmail(user.email, user.name, reason);
 
     res.json({
       success: true,

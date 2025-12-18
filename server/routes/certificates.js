@@ -43,21 +43,27 @@ router.post('/', authMiddleware, roleMiddleware('club_admin', 'college_admin'), 
     // Mint certificate on blockchain
     try {
       const certificateContract = getCertificateContract();
-      const tx = await certificateContract.issueCertificate(
-        recipientUser.blockchainId,
-        title,
-        description,
-        certificateType
-      );
-      const receipt = await tx.wait();
+      if (certificateContract) {
+        const tx = await certificateContract.issueCertificate(
+          recipientUser.blockchainId,
+          title,
+          description,
+          certificateType
+        );
+        const receipt = await tx.wait();
 
-      // Get token ID from event logs
-      const tokenId = receipt.logs[0].topics[3];
+        // Get token ID from event logs
+        const tokenId = receipt.logs[0].topics[3];
 
-      certificate.blockchainTxHash = tx.hash;
-      certificate.blockchainTokenId = parseInt(tokenId, 16);
-      certificate.verificationUrl = `${process.env.FRONTEND_URL}/verify/certificate/${certificate._id}`;
-      await certificate.save();
+        certificate.blockchainTxHash = tx.hash;
+        certificate.blockchainTokenId = parseInt(tokenId, 16);
+        certificate.verificationUrl = `${process.env.FRONTEND_URL}/verify/certificate/${certificate._id}`;
+        await certificate.save();
+      } else {
+        console.log('Certificate contract not deployed - stored in database only');
+        certificate.verificationUrl = `${process.env.FRONTEND_URL}/verify/certificate/${certificate._id}`;
+        await certificate.save();
+      }
 
       console.log('Certificate minted on blockchain:', tx.hash);
     } catch (blockchainError) {

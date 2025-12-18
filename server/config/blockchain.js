@@ -24,6 +24,7 @@ try {
 // Contract instances
 const getStudentIdContract = () => {
   if (!wallet) throw new Error('Blockchain not configured');
+  if (!process.env.STUDENT_ID_CONTRACT_ADDRESS) throw new Error('StudentId contract not deployed');
   return new ethers.Contract(
     process.env.STUDENT_ID_CONTRACT_ADDRESS,
     StudentIdABI,
@@ -33,6 +34,10 @@ const getStudentIdContract = () => {
 
 const getCertificateContract = () => {
   if (!wallet) throw new Error('Blockchain not configured');
+  if (!process.env.CERTIFICATE_CONTRACT_ADDRESS) {
+    console.warn('⚠️  Certificate contract not deployed. Using database only.');
+    return null;
+  }
   return new ethers.Contract(
     process.env.CERTIFICATE_CONTRACT_ADDRESS,
     CertificateABI,
@@ -42,6 +47,10 @@ const getCertificateContract = () => {
 
 const getBadgeContract = () => {
   if (!wallet) throw new Error('Blockchain not configured');
+  if (!process.env.BADGE_CONTRACT_ADDRESS) {
+    console.warn('⚠️  Badge contract not deployed. Using database only.');
+    return null;
+  }
   return new ethers.Contract(
     process.env.BADGE_CONTRACT_ADDRESS,
     BadgeABI,
