@@ -1,465 +1,261 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-
-// Context
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Pages
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
 import StudentDashboard from './pages/dashboards/StudentDashboard';
 import FacultyDashboard from './pages/dashboards/FacultyDashboard';
-import ClubAdminDashboard from './pages/dashboards/ClubAdminDashboard';
 import CollegeAdminDashboard from './pages/dashboards/CollegeAdminDashboard';
-import PendingApproval from './pages/PendingApproval';
-import Events from './pages/Events';
-import EventRegistration from './pages/EventRegistration';
-import Assignments from './pages/Assignments';
-import Certificates from './pages/Certificates';
-import VerifyCertificate from './pages/VerifyCertificate';
-import Badges from './pages/Badges';
-import Students from './pages/Students';
-import PendingGrades from './pages/PendingGrades';
-import CreateAssignment from './pages/CreateAssignment';
-import AssignmentDetails from './pages/AssignmentDetails';
+import ClubAdminDashboard from './pages/dashboards/ClubAdminDashboard';
+import AttendanceScanner from './pages/attendance/MarkAttendance';
+import StudentAttendance from './pages/attendance/ViewAttendance';
 import MyClasses from './pages/MyClasses';
-import MarkAttendance from './pages/attendance/MarkAttendance';
-import ViewAttendance from './pages/attendance/ViewAttendance';
+import CreateAssignment from './pages/CreateAssignment';
+import Assignments from './pages/Assignments';
 
-// Components
-import PrivateRoute from './components/PrivateRoute';
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { user, loading } = useAuth();
 
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#667eea',
-      light: '#8b9df6',
-      dark: '#4c63d2',
-      contrastText: '#fff',
-    },
-    secondary: {
-      main: '#764ba2',
-      light: '#9b6fc9',
-      dark: '#5a3780',
-      contrastText: '#fff',
-    },
-    background: {
-      default: 'transparent',
-      paper: 'rgba(255, 255, 255, 0.9)',
-    },
-    info: {
-      main: '#2196f3',
-      light: '#64b5f6',
-      dark: '#1976d2',
-    },
-    success: {
-      main: '#4caf50',
-      light: '#81c784',
-      dark: '#388e3c',
-    },
-    warning: {
-      main: '#ff9800',
-      light: '#ffb74d',
-      dark: '#f57c00',
-    },
-    error: {
-      main: '#f44336',
-      light: '#e57373',
-      dark: '#d32f2f',
-    },
-  },
-  typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-    h1: {
-      fontWeight: 800,
-      fontSize: '3rem',
-      letterSpacing: '-0.02em',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      backgroundClip: 'text',
-    },
-    h2: {
-      fontWeight: 700,
-      fontSize: '2.5rem',
-      letterSpacing: '-0.01em',
-      color: '#1e293b',
-    },
-    h3: {
-      fontWeight: 700,
-      fontSize: '2rem',
-      letterSpacing: '-0.01em',
-      color: '#334155',
-    },
-    h4: {
-      fontWeight: 600,
-      fontSize: '1.75rem',
-      color: '#475569',
-    },
-    h5: {
-      fontWeight: 600,
-      fontSize: '1.5rem',
-      color: '#64748b',
-    },
-    h6: {
-      fontWeight: 600,
-      fontSize: '1.25rem',
-      color: '#64748b',
-    },
-    body1: {
-      fontSize: '1rem',
-      lineHeight: 1.7,
-    },
-    body2: {
-      fontSize: '0.875rem',
-      lineHeight: 1.6,
-    },
-    button: {
-      fontWeight: 600,
-      letterSpacing: '0.02em',
-    },
-  },
-  shape: {
-    borderRadius: 16,
-  },
-  shadows: [
-    'none',
-    '0 2px 4px rgba(0, 0, 0, 0.05)',
-    '0 4px 12px rgba(0, 0, 0, 0.08)',
-    '0 8px 24px rgba(0, 0, 0, 0.12)',
-    '0 12px 32px rgba(0, 0, 0, 0.14)',
-    '0 16px 48px rgba(0, 0, 0, 0.16)',
-    '0 20px 56px rgba(0, 0, 0, 0.18)',
-    '0 24px 64px rgba(0, 0, 0, 0.20)',
-    '0 8px 32px rgba(102, 126, 234, 0.25)',
-    '0 12px 40px rgba(102, 126, 234, 0.30)',
-    '0 16px 48px rgba(102, 126, 234, 0.35)',
-    '0 20px 56px rgba(102, 126, 234, 0.40)',
-    '0 2px 4px rgba(0, 0, 0, 0.05)',
-    '0 4px 12px rgba(0, 0, 0, 0.08)',
-    '0 8px 24px rgba(0, 0, 0, 0.12)',
-    '0 12px 32px rgba(0, 0, 0, 0.14)',
-    '0 16px 48px rgba(0, 0, 0, 0.16)',
-    '0 20px 56px rgba(0, 0, 0, 0.18)',
-    '0 24px 64px rgba(0, 0, 0, 0.20)',
-    '0 28px 72px rgba(0, 0, 0, 0.22)',
-    '0 32px 80px rgba(0, 0, 0, 0.24)',
-    '0 36px 88px rgba(0, 0, 0, 0.26)',
-    '0 40px 96px rgba(0, 0, 0, 0.28)',
-    '0 44px 104px rgba(0, 0, 0, 0.30)',
-    '0 48px 112px rgba(0, 0, 0, 0.32)',
-  ],
-  components: {
-    MuiCssBaseline: {
-      styleOverrides: {
-        body: {
-          '&::-webkit-scrollbar': {
-            width: '10px',
-            height: '10px',
-          },
-          '&::-webkit-scrollbar-track': {
-            background: '#f1f1f1',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            borderRadius: '10px',
-          },
-          '&::-webkit-scrollbar-thumb:hover': {
-            background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
-          },
-        },
-      },
-    },
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 12,
-          textTransform: 'none',
-          fontWeight: 600,
-          padding: '10px 24px',
-          fontSize: '1rem',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': {
-            transform: 'translateY(-2px)',
-          },
-        },
-        contained: {
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          boxShadow: '0 8px 24px rgba(102, 126, 234, 0.35)',
-          '&:hover': {
-            background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
-            boxShadow: '0 12px 32px rgba(102, 126, 234, 0.45)',
-          },
-        },
-        outlined: {
-          borderWidth: 2,
-          borderColor: '#667eea',
-          color: '#667eea',
-          '&:hover': {
-            borderWidth: 2,
-            borderColor: '#764ba2',
-            background: 'rgba(102, 126, 234, 0.05)',
-          },
-        },
-        text: {
-          color: '#667eea',
-          '&:hover': {
-            background: 'rgba(102, 126, 234, 0.08)',
-          },
-        },
-      },
-    },
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          borderRadius: 20,
-          background: 'rgba(255, 255, 255, 0.9)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.18)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        },
-        elevation1: {
-          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
-        },
-        elevation2: {
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1)',
-        },
-        elevation3: {
-          boxShadow: '0 12px 32px rgba(0, 0, 0, 0.12)',
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 20,
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.18)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: '0 16px 48px rgba(102, 126, 234, 0.2)',
-          },
-        },
-      },
-    },
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 12,
-            background: 'rgba(255, 255, 255, 0.8)',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            '&:hover': {
-              background: 'rgba(255, 255, 255, 0.95)',
-            },
-            '&.Mui-focused': {
-              background: 'rgba(255, 255, 255, 1)',
-              boxShadow: '0 4px 16px rgba(102, 126, 234, 0.15)',
-            },
-          },
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-          fontWeight: 600,
-          fontSize: '0.875rem',
-        },
-        filled: {
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: '#fff',
-        },
-      },
-    },
-    MuiAppBar: {
-      styleOverrides: {
-        root: {
-          background: 'rgba(255, 255, 255, 0.8)',
-          backdropFilter: 'blur(20px)',
-          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.18)',
-          color: '#1e293b',
-        },
-      },
-    },
-    MuiAlert: {
-      styleOverrides: {
-        root: {
-          borderRadius: 12,
-          backdropFilter: 'blur(10px)',
-        },
-        filledSuccess: {
-          background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-        },
-        filledError: {
-          background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-        },
-        filledWarning: {
-          background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-        },
-        filledInfo: {
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        },
-      },
-    },
-  },
-});
+  if (loading) return null;
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/" />;
+  }
+
+  return children;
+};
 
 function App() {
+  const theme = useMemo(() => createTheme({
+    palette: {
+      mode: 'light',
+      primary: {
+        main: '#4f46e5', // Indigo 600
+        dark: '#4338ca',
+        light: '#6366f1',
+      },
+      secondary: {
+        main: '#7c3aed', // Violet 600
+      },
+      background: {
+        default: '#f8fafc', // Slate 50
+        paper: '#ffffff',    // White
+      },
+      text: {
+        primary: '#0f172a', // Slate 900
+        secondary: '#475569', // Slate 600
+      },
+      divider: '#e2e8f0', // Slate 200
+    },
+    typography: {
+      fontFamily: '"Inter", "Outfit", sans-serif',
+      h1: { fontWeight: 800, letterSpacing: '-0.025em', color: '#0f172a' },
+      h2: { fontWeight: 800, letterSpacing: '-0.02em', color: '#0f172a' },
+      h3: { fontWeight: 700, letterSpacing: '-0.01em', color: '#0f172a' },
+      h4: { fontWeight: 700, letterSpacing: '-0.01em', color: '#0f172a' },
+      button: { textTransform: 'none', fontWeight: 600 },
+    },
+    shape: {
+      borderRadius: 12,
+    },
+    components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            backgroundColor: '#f8fafc',
+            scrollbarWidth: 'thin',
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: '#f8fafc',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: '#e2e8f0',
+              borderRadius: '4px',
+            },
+          },
+        },
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: 'none',
+            backgroundColor: '#ffffff',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+          },
+        },
+      },
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            padding: '10px 24px',
+            borderRadius: '10px',
+            transition: 'all 0.2s ease',
+            textTransform: 'none',
+            fontWeight: 600,
+            '&:hover': {
+              transform: 'translateY(-1px)',
+            },
+          },
+          containedPrimary: {
+            background: '#4f46e5',
+            boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.2)',
+            '&:hover': {
+              background: '#4338ca',
+              boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.3)',
+            },
+          },
+          outlined: {
+            borderColor: '#e2e8f0',
+            color: '#475569',
+            '&:hover': {
+              borderColor: '#cbd5e1',
+              backgroundColor: '#f1f5f9',
+            },
+          },
+        },
+      },
+      MuiTextField: {
+        styleOverrides: {
+          root: {
+            '& .MuiOutlinedInput-root': {
+              backgroundColor: '#ffffff',
+              '& fieldset': {
+                borderColor: '#e2e8f0',
+              },
+              '&:hover fieldset': {
+                borderColor: '#cbd5e1',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: '#4f46e5',
+              },
+            },
+          },
+        },
+      },
+      MuiAppBar: {
+        styleOverrides: {
+          root: {
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            backdropFilter: 'blur(12px)',
+            borderBottom: '1px solid #e2e8f0',
+            boxShadow: 'none',
+            color: '#0f172a',
+          },
+        },
+      },
+      MuiCard: {
+        styleOverrides: {
+          root: {
+            backgroundColor: '#ffffff',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              borderColor: '#cbd5e1',
+              boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+              transform: 'translateY(-2px)',
+            },
+          },
+        },
+      },
+    },
+  }), []);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Router>
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/pending" element={<PendingApproval />} />
-            <Route path="/verify/certificate/:id" element={<VerifyCertificate />} />
 
-            {/* Protected Routes */}
             <Route
-              path="/dashboard/student"
+              path="/dashboard"
               element={
-                <PrivateRoute role="student">
+                <ProtectedRoute allowedRoles={['student']}>
                   <StudentDashboard />
-                </PrivateRoute>
+                </ProtectedRoute>
               }
             />
             <Route
-              path="/dashboard/faculty"
+              path="/faculty-dashboard"
               element={
-                <PrivateRoute role="faculty">
+                <ProtectedRoute allowedRoles={['faculty']}>
                   <FacultyDashboard />
-                </PrivateRoute>
+                </ProtectedRoute>
               }
             />
             <Route
-              path="/dashboard/club-admin"
+              path="/college-dashboard"
               element={
-                <PrivateRoute role="club_admin">
-                  <ClubAdminDashboard />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/dashboard/college-admin"
-              element={
-                <PrivateRoute role="college_admin">
+                <ProtectedRoute allowedRoles={['college_admin']}>
                   <CollegeAdminDashboard />
-                </PrivateRoute>
+                </ProtectedRoute>
               }
             />
             <Route
-              path="/events"
+              path="/club-dashboard"
               element={
-                <PrivateRoute>
-                  <Events />
-                </PrivateRoute>
+                <ProtectedRoute allowedRoles={['club_admin']}>
+                  <ClubAdminDashboard />
+                </ProtectedRoute>
               }
             />
-            <Route
-              path="/events/:eventId/register"
-              element={
-                <PrivateRoute role="student">
-                  <EventRegistration />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/assignments"
-              element={
-                <PrivateRoute>
-                  <Assignments />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/certificates"
-              element={
-                <PrivateRoute>
-                  <Certificates />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/badges"
-              element={
-                <PrivateRoute role="student">
-                  <Badges />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/my-classes"
-              element={
-                <PrivateRoute role="student">
-                  <MyClasses />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/students"
-              element={
-                <PrivateRoute role="faculty">
-                  <Students />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/pending-grades"
-              element={
-                <PrivateRoute role="faculty">
-                  <PendingGrades />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/create-assignment"
-              element={
-                <PrivateRoute role="faculty">
-                  <CreateAssignment />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/assignment/:id"
-              element={
-                <PrivateRoute role="faculty">
-                  <AssignmentDetails />
-                </PrivateRoute>
-              }
-            />
+
             <Route
               path="/mark-attendance"
               element={
-                <PrivateRoute role="faculty">
-                  <MarkAttendance />
-                </PrivateRoute>
+                <ProtectedRoute allowedRoles={['faculty']}>
+                  <AttendanceScanner />
+                </ProtectedRoute>
               }
             />
             <Route
               path="/attendance"
               element={
-                <PrivateRoute role="student">
-                  <ViewAttendance />
-                </PrivateRoute>
+                <ProtectedRoute allowedRoles={['student']}>
+                  <StudentAttendance />
+                </ProtectedRoute>
               }
             />
-
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route
+              path="/my-classes"
+              element={
+                <ProtectedRoute>
+                  <MyClasses />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/create-assignment"
+              element={
+                <ProtectedRoute allowedRoles={['faculty']}>
+                  <CreateAssignment />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/assignments"
+              element={
+                <ProtectedRoute>
+                  <Assignments />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </Router>
       </AuthProvider>

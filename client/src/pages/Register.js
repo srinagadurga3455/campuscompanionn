@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import axios from 'axios';
 import {
   Container,
@@ -16,14 +16,34 @@ import {
   StepLabel,
   IconButton,
   InputAdornment,
+  Divider,
 } from '@mui/material';
-import SchoolIcon from '@mui/icons-material/School';
-import MailOutlineIcon from '@mui/icons-material/MailOutline';
-import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import SchoolIcon from '@mui/icons-material/School';
+import VerifiedIcon from '@mui/icons-material/Verified';
+import MailOutlineIcon from '@mui/icons-material/MailOutline';
+import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
+import Navbar from '../components/Navbar';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+const branches = [
+  { code: 'CSE', name: 'Computer Science and Engineering' },
+  { code: 'AIML', name: 'Artificial Intelligence and Machine Learning' },
+  { code: 'CIC', name: 'Computer and Information Communication' },
+  { code: 'AIDS', name: 'Artificial Intelligence and Data Science' },
+  { code: 'IT', name: 'Information Technology' },
+  { code: 'CSBS', name: 'Computer Science and Business Systems' },
+  { code: 'ECE', name: 'Electronics and Communication Engineering' },
+  { code: 'EEE', name: 'Electrical and Electronics Engineering' },
+  { code: 'MECH', name: 'Mechanical Engineering' },
+  { code: 'CIVIL', name: 'Civil Engineering' },
+  { code: 'CSD', name: 'Computer Science and Design' },
+  { code: 'CSIT', name: 'Computer Science and Information Technology' }
+];
+
+const steps = ['Identity Info', 'Verify Email'];
 
 const Register = () => {
   const navigate = useNavigate();
@@ -47,23 +67,6 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const branches = [
-    { code: 'CSE', name: 'Computer Science and Engineering' },
-    { code: 'AIML', name: 'Artificial Intelligence and Machine Learning' },
-    { code: 'CIC', name: 'Computer and Information Communication' },
-    { code: 'AIDS', name: 'Artificial Intelligence and Data Science' },
-    { code: 'IT', name: 'Information Technology' },
-    { code: 'CSBS', name: 'Computer Science and Business Systems' },
-    { code: 'ECE', name: 'Electronics and Communication Engineering' },
-    { code: 'EEE', name: 'Electrical and Electronics Engineering' },
-    { code: 'MECH', name: 'Mechanical Engineering' },
-    { code: 'CIVIL', name: 'Civil Engineering' },
-    { code: 'CSD', name: 'Computer Science and Design' },
-    { code: 'CSIT', name: 'Computer Science and Information Technology' }
-  ];
-
-  const steps = ['Enter Details', 'Verify Email'];
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -73,7 +76,6 @@ const Register = () => {
     setError('');
     setSuccess('');
 
-    // Validation
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -88,7 +90,6 @@ const Register = () => {
 
     try {
       const response = await axios.post(`${API_URL}/auth/send-otp`, formData);
-      
       if (response.data.success) {
         setSuccess('OTP sent to your email! Please check your inbox.');
         setActiveStep(1);
@@ -136,7 +137,6 @@ const Register = () => {
 
     try {
       const response = await axios.post(`${API_URL}/auth/send-otp`, formData);
-      
       if (response.data.success) {
         setSuccess('New OTP sent to your email!');
         setOtp('');
@@ -149,20 +149,47 @@ const Register = () => {
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ py: 4 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Box display="flex" flexDirection="column" alignItems="center" mb={3}>
-            <SchoolIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
-            <Typography variant="h4" component="h1" gutterBottom>
-              Register
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Navbar />
+
+      <Container maxWidth="md" sx={{ py: { xs: 8, md: 10 } }}>
+        <Paper
+          className="saas-card"
+          elevation={0}
+          sx={{
+            p: { xs: 4, md: 6 },
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: '16px',
+            animation: 'fadeIn 0.5s ease-out'
+          }}
+        >
+          <Box sx={{ mb: 6, textAlign: 'center' }}>
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: '12px',
+                bgcolor: 'rgba(79, 70, 229, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 2.5
+              }}
+            >
+              <VerifiedIcon sx={{ color: 'primary.main', fontSize: 24 }} />
+            </Box>
+            <Typography variant="h4" sx={{ fontWeight: 900, mb: 1, letterSpacing: '-0.02em' }}>
+              Join the Ecosystem
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Create your Campus Companion account
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              Create your blockchain-verified institutional account
             </Typography>
           </Box>
 
-          <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
+          <Stepper activeStep={activeStep} sx={{ mb: 8, '& .MuiStepIcon-root.Mui-active': { color: 'primary.main' }, '& .MuiStepIcon-root.Mui-completed': { color: 'primary.main' } }}>
             {steps.map((label) => (
               <Step key={label}>
                 <StepLabel>{label}</StepLabel>
@@ -171,203 +198,199 @@ const Register = () => {
           </Stepper>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
+            <Alert severity="error" sx={{ mb: 4, borderRadius: '10px' }}>
               {error}
             </Alert>
           )}
           {success && (
-            <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>
+            <Alert severity="success" sx={{ mb: 4, borderRadius: '10px' }}>
               {success}
             </Alert>
           )}
 
           {activeStep === 0 && (
-            <form onSubmit={handleSendOTP}>
-              <TextField
-                fullWidth
-                label="Full Name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                margin="normal"
-                required
-              />
-              <TextField
-                fullWidth
-                label="Email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                margin="normal"
-                required
-              />
-              <TextField
-                fullWidth
-                label="Password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                value={formData.password}
-                onChange={handleChange}
-                margin="normal"
-                required
-                helperText="At least 6 characters"
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <TextField
-                fullWidth
-                label="Confirm Password"
-                name="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                margin="normal"
-                required
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        edge="end"
-                      >
-                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <TextField
-                fullWidth
-                label="Phone Number"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                margin="normal"
-                required
-                helperText="10 digit mobile number (e.g., 9876543210)"
-                inputProps={{ maxLength: 10, pattern: "[0-9]*" }}
-              />
-              <TextField
-                fullWidth
-                select
-                label="Role"
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                margin="normal"
-                required
-              >
-                <MenuItem value="student">Student</MenuItem>
-                <MenuItem value="faculty">Faculty</MenuItem>
-                <MenuItem value="club_admin">Club Admin</MenuItem>
-              </TextField>
-
-              {(formData.role === 'student' || formData.role === 'faculty') && (
+            <Box component="form" onSubmit={handleSendOTP} sx={{ animation: 'fadeIn 0.4s' }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
+                <TextField
+                  fullWidth
+                  label="Full Name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                />
+                <TextField
+                  fullWidth
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                />
+                <TextField
+                  fullWidth
+                  label="Password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  helperText="At least 6 characters"
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="Confirm Password"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          edge="end"
+                        >
+                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="Phone Number"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  required
+                  helperText="10 digit mobile number"
+                  inputProps={{ maxLength: 10, pattern: "[0-9]*" }}
+                />
                 <TextField
                   fullWidth
                   select
-                  label="Branch"
-                  name="branch"
-                  value={formData.branch}
+                  label="Role"
+                  name="role"
+                  value={formData.role}
                   onChange={handleChange}
-                  margin="normal"
                   required
-                  helperText="Select your branch"
                 >
-                  {branches.map((branch) => (
-                    <MenuItem key={branch._id} value={branch._id}>
-                      {branch.name} ({branch.code})
-                    </MenuItem>
-                  ))}
+                  <MenuItem value="student">Student</MenuItem>
+                  <MenuItem value="faculty">Faculty</MenuItem>
+                  <MenuItem value="club_admin">Club Admin</MenuItem>
                 </TextField>
-              )}
 
-              {formData.role === 'student' && (
-                <>
+                {(formData.role === 'student' || formData.role === 'faculty') && (
                   <TextField
                     fullWidth
-                    label="Year"
-                    name="year"
-                    type="number"
-                    value={formData.year}
+                    select
+                    label="Branch"
+                    name="branch"
+                    value={formData.branch}
                     onChange={handleChange}
-                    margin="normal"
                     required
-                    inputProps={{ min: 1, max: 4 }}
-                  />
-                  <TextField
-                    fullWidth
-                    label="Year of Admission"
-                    name="yearOfAdmission"
-                    type="number"
-                    value={formData.yearOfAdmission}
-                    onChange={handleChange}
-                    margin="normal"
-                    required
-                    helperText="Year you were admitted (e.g., 2023)"
-                  />
-                  <TextField
-                    fullWidth
-                    label="Class Section"
-                    name="classSection"
-                    value={formData.classSection}
-                    onChange={handleChange}
-                    margin="normal"
-                    helperText="Optional (e.g., A, B, C)"
-                  />
-                </>
-              )}
+                  >
+                    {branches.map((branch) => (
+                      <MenuItem key={branch.code} value={branch.name}>
+                        {branch.name} ({branch.code})
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+
+                {formData.role === 'student' && (
+                  <>
+                    <TextField
+                      fullWidth
+                      label="Year"
+                      name="year"
+                      type="number"
+                      value={formData.year}
+                      onChange={handleChange}
+                      required
+                      inputProps={{ min: 1, max: 4 }}
+                    />
+                    <TextField
+                      fullWidth
+                      label="Year of Admission"
+                      name="yearOfAdmission"
+                      type="number"
+                      value={formData.yearOfAdmission}
+                      onChange={handleChange}
+                      required
+                      helperText="Admission Year (e.g., 2023)"
+                    />
+                    <TextField
+                      fullWidth
+                      label="Class Section"
+                      name="classSection"
+                      value={formData.classSection}
+                      onChange={handleChange}
+                      helperText="Optional (e.g., A, B)"
+                    />
+                  </>
+                )}
+              </Box>
 
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
                 size="large"
-                sx={{ mt: 3, mb: 2 }}
+                sx={{
+                  mt: 6,
+                  py: 1.5,
+                  fontWeight: 800,
+                  fontSize: '1rem',
+                  boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.1), 0 2px 4px -1px rgba(79, 70, 229, 0.06)'
+                }}
                 disabled={loading}
-                startIcon={<MailOutlineIcon />}
+                startIcon={loading ? null : <MailOutlineIcon />}
               >
-                {loading ? <CircularProgress size={24} /> : 'Send OTP'}
+                {loading ? <CircularProgress size={24} color="inherit" /> : 'Send Verification OTP'}
               </Button>
-            </form>
+            </Box>
           )}
 
           {activeStep === 1 && (
-            <Box>
-              <Box display="flex" flexDirection="column" alignItems="center" mb={3}>
+            <Box sx={{ animation: 'fadeIn 0.4s' }}>
+              <Box sx={{ textAlign: 'center', mb: 4 }}>
                 <VerifiedUserIcon sx={{ fontSize: 60, color: 'success.main', mb: 2 }} />
-                <Typography variant="h6" gutterBottom>
+                <Typography variant="h6" sx={{ fontWeight: 700 }}>
                   Verify Your Email
                 </Typography>
-                <Typography variant="body2" color="text.secondary" textAlign="center">
-                  We've sent a 6-digit OTP to <strong>{formData.email}</strong>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  A 6-digit OTP was sent to <strong>{formData.email}</strong>
                 </Typography>
               </Box>
 
-              <form onSubmit={handleVerifyOTP}>
+              <Box component="form" onSubmit={handleVerifyOTP}>
                 <TextField
                   fullWidth
-                  label="Enter OTP"
+                  label="OTP code"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  margin="normal"
                   required
-                  inputProps={{ 
+                  inputProps={{
                     maxLength: 6,
                     style: { fontSize: 24, letterSpacing: 8, textAlign: 'center' }
                   }}
-                  helperText="Enter the 6-digit code from your email"
+                  helperText="Check your inbox (and spam)"
                 />
 
                 <Button
@@ -375,43 +398,47 @@ const Register = () => {
                   fullWidth
                   variant="contained"
                   size="large"
-                  sx={{ mt: 3, mb: 2 }}
+                  sx={{ mt: 4, py: 1.5, fontWeight: 800 }}
                   disabled={loading || otp.length !== 6}
                 >
-                  {loading ? <CircularProgress size={24} /> : 'Verify & Complete Registration'}
+                  {loading ? <CircularProgress size={24} color="inherit" /> : 'Verify & Finalize'}
                 </Button>
 
-                <Box display="flex" justifyContent="space-between" mt={2}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
                   <Button
-                    variant="text"
                     onClick={() => setActiveStep(0)}
                     disabled={loading}
+                    variant="text"
+                    sx={{ color: 'text.secondary', fontWeight: 600 }}
                   >
-                    ← Back
+                    ← Back to Details
                   </Button>
                   <Button
-                    variant="text"
                     onClick={handleResendOTP}
                     disabled={loading}
+                    variant="text"
+                    sx={{ color: 'primary.main', fontWeight: 600 }}
                   >
-                    Resend OTP
+                    Resend Code
                   </Button>
                 </Box>
-              </form>
+              </Box>
             </Box>
           )}
 
-          <Box textAlign="center" mt={3}>
-            <Typography variant="body2">
-              Already have an account?{' '}
-              <Link to="/login" style={{ textDecoration: 'none', color: '#1976d2' }}>
-                Login here
-              </Link>
+          <Divider sx={{ my: 4 }} />
+
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              Already registered?{' '}
+              <RouterLink to="/login" style={{ color: '#4f46e5', textDecoration: 'none', fontWeight: 700 }}>
+                Sign In to Portal
+              </RouterLink>
             </Typography>
           </Box>
         </Paper>
-      </Box>
-    </Container>
+      </Container>
+    </Box>
   );
 };
 

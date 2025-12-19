@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   Container,
@@ -10,23 +10,25 @@ import {
   Box,
   Alert,
   CircularProgress,
-  InputAdornment,
   IconButton,
+  InputAdornment,
+  Stack,
 } from '@mui/material';
-import SchoolIcon from '@mui/icons-material/School';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import SchoolIcon from '@mui/icons-material/School';
+import Navbar from '../components/Navbar';
 
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [formData, setFormData] = useState({
-    emailOrId: '',
+    email: '',
     password: '',
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -37,219 +39,127 @@ const Login = () => {
     setError('');
     setLoading(true);
 
-    const result = await login(formData.emailOrId, formData.password);
-
+    const result = await login(formData.email, formData.password);
     if (result.success) {
-      const { user } = result;
-
-      if (user.approvalStatus === 'pending') {
-        navigate('/pending');
-      } else {
-        // Redirect based on role
-        const dashboardMap = {
-          student: '/dashboard/student',
-          faculty: '/dashboard/faculty',
-          club_admin: '/dashboard/club-admin',
-          college_admin: '/dashboard/college-admin',
-        };
-        navigate(dashboardMap[user.role] || '/');
-      }
+      // Redirect based on role
+      const role = result.user.role;
+      if (role === 'student') navigate('/dashboard');
+      else if (role === 'faculty') navigate('/faculty-dashboard');
+      else if (role === 'college_admin') navigate('/college-dashboard');
+      else if (role === 'club_admin') navigate('/club-dashboard');
     } else {
-      setError(result.message);
+      setError(result.error);
     }
-
     setLoading(false);
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          py: 4,
-        }}
-      >
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
+      <Navbar />
+
+      <Container maxWidth="sm" sx={{ py: { xs: 8, md: 12 }, position: 'relative', zIndex: 1 }}>
         <Paper
-          elevation={3}
+          className="saas-card"
+          elevation={0}
           sx={{
-            p: 5,
-            width: '100%',
-            animation: 'fadeIn 0.6s ease-out',
-            '@keyframes fadeIn': {
-              from: {
-                opacity: 0,
-                transform: 'translateY(30px)',
-              },
-              to: {
-                opacity: 1,
-                transform: 'translateY(0)',
-              },
-            },
+            p: { xs: 4, md: 6 },
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: '16px',
+            animation: 'fadeIn 0.5s ease-out'
           }}
         >
-          <Box display="flex" flexDirection="column" alignItems="center" mb={4}>
+          <Box sx={{ mb: 5, textAlign: 'center' }}>
             <Box
               sx={{
-                width: 80,
-                height: 80,
-                borderRadius: '20px',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                width: 48,
+                height: 48,
+                borderRadius: '12px',
+                bgcolor: 'rgba(79, 70, 229, 0.1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                mb: 3,
-                boxShadow: '0 8px 32px rgba(102, 126, 234, 0.35)',
-                animation: 'scaleIn 0.5s ease-out 0.2s both',
-                '@keyframes scaleIn': {
-                  from: {
-                    opacity: 0,
-                    transform: 'scale(0.8)',
-                  },
-                  to: {
-                    opacity: 1,
-                    transform: 'scale(1)',
-                  },
-                },
+                mx: 'auto',
+                mb: 2.5
               }}
             >
-              <SchoolIcon sx={{ fontSize: 48, color: '#fff' }} />
+              <SchoolIcon sx={{ color: 'primary.main', fontSize: 24 }} />
             </Box>
-            <Typography
-              variant="h4"
-              component="h1"
-              gutterBottom
-              sx={{
-                fontWeight: 700,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
-              Campus Companion
+            <Typography variant="h4" sx={{ fontWeight: 900, mb: 1, letterSpacing: '-0.02em', color: 'text.primary' }}>
+              Welcome Back
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
-              Login to access your dashboard
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              Institutional access to Campus Companion portal
             </Typography>
           </Box>
 
           {error && (
-            <Alert
-              severity="error"
-              sx={{
-                mb: 3,
-                animation: 'slideIn 0.3s ease-out',
-                '@keyframes slideIn': {
-                  from: {
-                    opacity: 0,
-                    transform: 'translateX(-20px)',
-                  },
-                  to: {
-                    opacity: 1,
-                    transform: 'translateX(0)',
-                  },
-                },
-              }}
-            >
+            <Alert severity="error" sx={{ mb: 4, borderRadius: '10px' }}>
               {error}
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit}>
-            <TextField
-              fullWidth
-              label="Email or ID"
-              name="emailOrId"
-              type="text"
-              value={formData.emailOrId}
-              onChange={handleChange}
-              margin="normal"
-              required
-              placeholder="Enter email, Student ID, or Teacher Code"
-              sx={{ mb: 2 }}
-            />
-            <TextField
-              fullWidth
-              label="Password"
-              name="password"
-              type={showPassword ? 'text' : 'password'}
-              value={formData.password}
-              onChange={handleChange}
-              margin="normal"
-              required
-              sx={{ mb: 3 }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={() => setShowPassword(!showPassword)}
-                      onMouseDown={(e) => e.preventDefault()}
-                      edge="end"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <Box textAlign="right" mb={2}>
-              <Link
-                to="/forgot-password"
-                style={{
-                  textDecoration: 'none',
-                  color: '#667eea',
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                  transition: 'color 0.2s',
+          <Box component="form" onSubmit={handleSubmit}>
+            <Stack spacing={3}>
+              <TextField
+                fullWidth
+                label="Academic Email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                variant="outlined"
+              />
+              <TextField
+                fullWidth
+                label="Security Key"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={handleChange}
+                required
+                variant="outlined"
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
                 }}
-                onMouseEnter={(e) => e.target.style.color = '#764ba2'}
-                onMouseLeave={(e) => e.target.style.color = '#667eea'}
+              />
+              <Button
+                fullWidth
+                type="submit"
+                variant="contained"
+                size="large"
+                disabled={loading}
+                sx={{
+                  py: 1.8,
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.2)'
+                }}
               >
-                Forgot Password?
-              </Link>
-            </Box>
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              size="large"
-              sx={{
-                mt: 1,
-                mb: 3,
-                py: 1.5,
-                fontSize: '1.1rem',
-              }}
-              disabled={loading}
-            >
-              {loading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : 'Login'}
-            </Button>
-          </form>
+                {loading ? <CircularProgress size={24} color="inherit" /> : 'Authorize Access'}
+              </Button>
+            </Stack>
+          </Box>
 
-          <Box textAlign="center" mt={3}>
-            <Typography variant="body2" sx={{ color: '#64748b' }}>
-              Don't have an account?{' '}
-              <Link
-                to="/register"
-                style={{
-                  textDecoration: 'none',
-                  color: '#667eea',
-                  fontWeight: 600,
-                  transition: 'color 0.2s',
-                }}
-                onMouseEnter={(e) => e.target.style.color = '#764ba2'}
-                onMouseLeave={(e) => e.target.style.color = '#667eea'}
-              >
-                Register here
-              </Link>
+          <Box sx={{ mt: 4, textAlign: 'center' }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              New to the platform?{' '}
+              <RouterLink to="/register" style={{ color: '#4f46e5', textDecoration: 'none', fontWeight: 700 }}>
+                Apply for Registration
+              </RouterLink>
             </Typography>
           </Box>
         </Paper>
-      </Box>
-    </Container>
+      </Container>
+    </Box>
   );
 };
 

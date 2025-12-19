@@ -1,102 +1,176 @@
-import React from 'react';
-import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import LogoutIcon from '@mui/icons-material/Logout';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  IconButton,
+  Box,
+  Menu,
+  MenuItem,
+  Avatar,
+  Tooltip,
+  Divider,
+  useTheme,
+  useMediaQuery,
+  Chip,
+  Stack,
+} from '@mui/material';
 import SchoolIcon from '@mui/icons-material/School';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import LogoutIcon from '@mui/icons-material/Logout';
+import PersonIcon from '@mui/icons-material/Person';
+import MenuIcon from '@mui/icons-material/Menu';
 
-const Navbar = ({ title = 'Campus Companion' }) => {
-  const navigate = useNavigate();
+const Navbar = ({ title }) => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const handleLogout = () => {
-    logout();
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = useState(null);
+
+  const handleMenu = (event) => setAnchorEl(event.currentTarget);
+  const handleClose = () => setAnchorEl(null);
+
+  const handleLogout = async () => {
+    handleClose();
+    await logout();
     navigate('/login');
   };
 
+  const getDashboardPath = () => {
+    if (!user) return '/';
+    switch (user.role) {
+      case 'student': return '/dashboard';
+      case 'faculty': return '/faculty-dashboard';
+      case 'college_admin': return '/college-dashboard';
+      case 'club_admin': return '/club-dashboard';
+      default: return '/';
+    }
+  };
+
   return (
-    <AppBar position="static" elevation={0}>
-      <Toolbar sx={{ py: 1.5 }}>
-        <Box
-          sx={{
-            width: 48,
-            height: 48,
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            mr: 2,
-            boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)',
-          }}
-        >
-          <SchoolIcon sx={{ color: '#fff', fontSize: 28 }} />
-        </Box>
-        <Typography
-          variant="h6"
-          component="div"
-          sx={{
-            flexGrow: 1,
-            fontWeight: 700,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}
-        >
-          {title}
-        </Typography>
-        {user && (
-          <Box display="flex" alignItems="center" gap={2}>
-            <Box sx={{ textAlign: 'right', display: { xs: 'none', sm: 'block' } }}>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e293b' }}>
-                {user.name}
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b', textTransform: 'capitalize' }}>
-                {user.role.replace('_', ' ')}
-              </Typography>
-            </Box>
-            {user.blockchainId && (
-              <Box
-                sx={{
-                  display: { xs: 'none', md: 'flex' },
-                  alignItems: 'center',
-                  background: 'rgba(102, 126, 234, 0.1)',
-                  px: 2,
-                  py: 0.75,
-                  borderRadius: 2,
-                  border: '1px solid rgba(102, 126, 234, 0.2)',
-                }}
-              >
-                <Typography variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 600, color: '#667eea' }}>
-                  ID: {user.blockchainId}
-                </Typography>
-              </Box>
-            )}
-            <Button
-              color="inherit"
-              onClick={handleLogout}
-              startIcon={<LogoutIcon />}
+    <AppBar position="sticky" elevation={0} sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
+      <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, md: 4 } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            component={RouterLink}
+            to="/"
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              textDecoration: 'none',
+              color: 'inherit',
+              transition: 'all 0.2s ease',
+              '&:hover': { opacity: 0.8 }
+            }}
+          >
+            <SchoolIcon sx={{ color: 'primary.main', fontSize: 28 }} />
+            <Typography
+              variant="h6"
               sx={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: '#fff',
-                px: 3,
-                py: 1,
-                borderRadius: 2,
-                fontWeight: 600,
-                boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
-                  boxShadow: '0 6px 20px rgba(102, 126, 234, 0.4)',
-                  transform: 'translateY(-2px)',
-                },
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                ml: 1,
+                fontWeight: 900,
+                letterSpacing: '-0.03em',
+                fontFamily: 'Outfit',
+                display: { xs: 'none', sm: 'block' }
               }}
             >
-              Logout
-            </Button>
+              CAMPUS<Box component="span" sx={{ color: 'primary.main' }}>COMPANION</Box>
+            </Typography>
           </Box>
-        )}
+          {title && (
+            <>
+              <Divider orientation="vertical" flexItem sx={{ mx: 2, height: 24, alignSelf: 'center' }} />
+              <Typography variant="body1" sx={{ fontWeight: 600, color: 'text.secondary', display: { xs: 'none', sm: 'block' } }}>
+                {title}
+              </Typography>
+            </>
+          )}
+        </Box>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {user ? (
+            <>
+              <Button
+                component={RouterLink}
+                to={getDashboardPath()}
+                startIcon={<DashboardIcon />}
+                variant="outlined"
+                sx={{ display: { xs: 'none', md: 'flex' }, borderColor: 'divider', color: 'text.secondary' }}
+              >
+                Dashboard
+              </Button>
+              <Tooltip title="Account settings">
+                <IconButton
+                  onClick={handleMenu}
+                  sx={{
+                    p: 0.5,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    '&:hover': { borderColor: 'primary.main' }
+                  }}
+                >
+                  <Avatar
+                    sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: '14px', fontWeight: 800 }}
+                  >
+                    {user.name?.charAt(0)}
+                  </Avatar>
+                </IconButton>
+              </Tooltip>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleClose}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                PaperProps={{
+                  elevation: 0,
+                  sx: {
+                    mt: 1.5,
+                    minWidth: 200,
+                    borderRadius: '12px',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                  },
+                }}
+              >
+                <Box sx={{ px: 2, py: 1.5 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary' }}>{user.name}</Typography>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>{user.email}</Typography>
+                  <Chip
+                    label={user.role.replace('_', ' ')}
+                    size="small"
+                    sx={{ mt: 1, height: 20, fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', bgcolor: 'primary.main', color: 'white' }}
+                  />
+                </Box>
+                <Divider />
+                <MenuItem onClick={() => navigate(getDashboardPath())} sx={{ py: 1.2, gap: 1.5 }}>
+                  <DashboardIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>Command Center</Typography>
+                </MenuItem>
+                <MenuItem onClick={handleLogout} sx={{ py: 1.2, gap: 1.5, color: 'error.main' }}>
+                  <LogoutIcon sx={{ fontSize: 20 }} />
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>End Session</Typography>
+                </MenuItem>
+              </Menu>
+            </>
+          ) : (
+            <Stack direction="row" spacing={1.5}>
+              <Button component={RouterLink} to="/login" variant="text" sx={{ fontWeight: 600 }}>
+                Sign In
+              </Button>
+              <Button component={RouterLink} to="/register" variant="contained" sx={{ fontWeight: 700 }}>
+                Get Started
+              </Button>
+            </Stack>
+          )}
+        </Box>
       </Toolbar>
     </AppBar>
   );
