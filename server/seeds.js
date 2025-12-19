@@ -123,7 +123,7 @@ const seedDatabase = async () => {
 
     // Create clubs
     console.log('🎭 Creating clubs...');
-    
+
     // Create a temporary placeholder for club creation
     const techClub = await Club.create({
       name: 'Tech Club',
@@ -184,14 +184,14 @@ const seedDatabase = async () => {
       emailVerified: true,
       approvalStatus: 'approved'
     });
-    
+
     // Update club with actual admin
     techClub.admin = clubAdmin._id;
     await techClub.save();
-    
+
     culturalClub.admin = clubAdmin._id;
     await culturalClub.save();
-    
+
     console.log('✅ Club Admin created - Email: clubadmin@campus.com, Password: password123');
 
     // 4. Student (Approved)
@@ -240,8 +240,7 @@ const seedDatabase = async () => {
     console.log('\n💡 All users are email verified and ready to login!');
     console.log('💡 Pending student needs admin approval to access dashboard.');
     console.log('\n📚 Departments: Engineering (ENG)');
-    console.log('🌿 Branches: CSE, AIML, CIC, AIDS, IT, CSBS, ECE, EEE, MECH, CIVIL, CSD, CSIT
-    console.log('\n📚 Departments created: Computer Science (CS), Electronics (EC)');
+    console.log('🌿 Branches: CSE, AIML, CIC, AIDS, IT, CSBS, ECE, EEE, MECH, CIVIL, CSD, CSIT');
     console.log('🎭 Clubs created: Tech Club, Cultural Club\n');
 
     process.exit(0);
@@ -252,3 +251,6 @@ const seedDatabase = async () => {
 };
 
 seedDatabase();
+
+
+
