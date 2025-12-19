@@ -20,6 +20,7 @@ const badgeRoutes = require('./routes/badges');
 const blockchainRoutes = require('./routes/blockchain');
 const enrollmentRoutes = require('./routes/enrollments');
 const attendanceRoutes = require('./routes/attendance');
+const collegeAdminRoutes = require('./routes/collegeAdmin');
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.use('/api/badges', badgeRoutes);
 app.use('/api/blockchain', blockchainRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/college-admin', collegeAdminRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -72,6 +74,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });

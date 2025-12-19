@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import {
@@ -21,6 +22,7 @@ import api from '../utils/api';
 
 const Assignments = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -91,10 +93,17 @@ const Assignments = () => {
             {assignments.map((assignment) => {
               const mySubmission = getMySubmission(assignment);
               const isPastDue = new Date(assignment.dueDate) < new Date();
-              
+
               return (
                 <Grid item xs={12} md={6} key={assignment._id}>
-                  <Card>
+                  <Card
+                    sx={{
+                      height: '100%',
+                      cursor: 'pointer',
+                      '&:hover': { borderColor: 'primary.main', bgcolor: 'rgba(79,70,229,0.02)' }
+                    }}
+                    onClick={() => navigate(`/assignments/${assignment._id}`)}
+                  >
                     <CardContent>
                       <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>
@@ -108,7 +117,9 @@ const Assignments = () => {
                       </Box>
 
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {assignment.description}
+                        {assignment.description.length > 120
+                          ? `${assignment.description.substring(0, 120)}...`
+                          : assignment.description}
                       </Typography>
 
                       <Box display="flex" gap={1} flexWrap="wrap" mb={2}>
@@ -118,41 +129,21 @@ const Assignments = () => {
                       </Box>
 
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        📅 Due: {new Date(assignment.dueDate).toLocaleDateString()} at{' '}
-                        {new Date(assignment.dueDate).toLocaleTimeString()}
+                        📅 Due: {new Date(assignment.dueDate).toLocaleDateString()}
                       </Typography>
 
-                      {assignment.attachments && assignment.attachments.length > 0 && (
-                        <Box sx={{ mb: 2 }}>
-                          {assignment.attachments.map((attachment, index) => (
-                            <Button
-                              key={index}
-                              variant="outlined"
-                              size="small"
-                              startIcon={<PictureAsPdfIcon />}
-                              endIcon={<DownloadIcon />}
-                              onClick={() => handleDownload(attachment.url, attachment.filename)}
-                              sx={{ mr: 1 }}
-                            >
-                              {attachment.filename}
-                            </Button>
-                          ))}
-                        </Box>
-                      )}
-
-                      {mySubmission && (
-                        <Box sx={{ mt: 2, p: 2, bgcolor: 'success.light', borderRadius: 2 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.dark' }}>
-                            ✓ Submitted on {new Date(mySubmission.submittedAt).toLocaleDateString()}
-                          </Typography>
-                          {mySubmission.status === 'graded' && (
-                            <Typography variant="body2" sx={{ color: 'success.dark', mt: 1 }}>
-                              Grade: {mySubmission.marksObtained}/{assignment.maxMarks}
-                              {mySubmission.feedback && ` - ${mySubmission.feedback}`}
-                            </Typography>
-                          )}
-                        </Box>
-                      )}
+                      <Box sx={{ mt: 'auto', pt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Button size="small" variant="text" sx={{ fontWeight: 700 }}>View Details</Button>
+                        {mySubmission && (
+                          <Chip
+                            label="Submitted"
+                            size="small"
+                            color="success"
+                            variant="outlined"
+                            sx={{ fontWeight: 800, textTransform: 'uppercase', fontSize: '10px' }}
+                          />
+                        )}
+                      </Box>
                     </CardContent>
                   </Card>
                 </Grid>

@@ -25,6 +25,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import PeopleIcon from '@mui/icons-material/People';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import PaidIcon from '@mui/icons-material/Paid';
 import CategoryIcon from '@mui/icons-material/Category';
 import GroupsIcon from '@mui/icons-material/Groups';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -45,6 +46,23 @@ const EventRegistration = () => {
     phoneNumber: '',
     reason: '',
   });
+  const [teamData, setTeamData] = useState({
+    teamName: '',
+    members: []
+  });
+
+  // Initialize team members based on min size when event loads
+  useEffect(() => {
+    if (event?.participationType === 'team' && event?.teamSize?.min > 1) {
+      const initialMembers = Array(event.teamSize.min - 1).fill({
+        name: '',
+        branch: '',
+        phone: '',
+        email: ''
+      });
+      setTeamData(prev => ({ ...prev, members: initialMembers }));
+    }
+  }, [event]);
 
   useEffect(() => {
     fetchEventDetails();
@@ -71,6 +89,26 @@ const EventRegistration = () => {
     });
   };
 
+  const handleTeamMemberChange = (index, field, value) => {
+    const updatedMembers = [...teamData.members];
+    updatedMembers[index] = { ...updatedMembers[index], [field]: value };
+    setTeamData({ ...teamData, members: updatedMembers });
+  };
+
+  const addTeamMember = () => {
+    if (teamData.members.length + 1 < (event?.teamSize?.max || 5)) {
+      setTeamData({
+        ...teamData,
+        members: [...teamData.members, { name: '', branch: '', phone: '', email: '' }]
+      });
+    }
+  };
+
+  const removeTeamMember = (index) => {
+    const updatedMembers = teamData.members.filter((_, i) => i !== index);
+    setTeamData({ ...teamData, members: updatedMembers });
+  };
+
   const handleRegister = async () => {
     if (!agreeTerms) {
       setError('Please agree to the terms and conditions');
@@ -80,13 +118,28 @@ const EventRegistration = () => {
     try {
       setSubmitting(true);
       setError('');
-      await api.post(`/events/${eventId}/register`, registrationData);
-      setSuccess('Successfully registered for the event! You will receive a confirmation email.');
-      
-      // Redirect to events page after 2 seconds
-      setTimeout(() => {
-        navigate('/events');
-      }, 2000);
+
+      const payload = {
+        ...registrationData,
+        ...(event.participationType === 'team' ? teamData : {})
+      };
+
+      const res = await api.post(`/events/${eventId}/register`, payload);
+      setSuccess('Successfully registered for the event!');
+
+      // Handle Payment Redirect if applicable
+      if (event?.registrationFee > 0 && event?.paymentLink) {
+        setSuccess('Registration successful! Redirecting to payment page...');
+        setTimeout(() => {
+          navigate(`/events/${eventId}/payment`);
+        }, 1000);
+      } else {
+        setSuccess('Successfully registered for the event! You will receive a confirmation email.');
+        // Redirect to events page after 2 seconds
+        setTimeout(() => {
+          navigate('/events');
+        }, 2000);
+      }
     } catch (error) {
       console.error('Error registering:', error);
       setError(error.response?.data?.message || 'Failed to register for event');
@@ -117,7 +170,13 @@ const EventRegistration = () => {
   };
 
   const isAlreadyRegistered = () => {
-    return event?.participants?.some(p => p._id === user?.id);
+    // Check confirmed participants
+    return event?.participants?.some(p => p._id === user?.id || p === user?.id) ||
+      event?.teamRegistrations?.some(t => t.leader === user?.id);
+  };
+
+  const isPendingPayment = () => {
+    return event?.pendingRegistrations?.some(p => p.user === user?.id || p.user?._id === user?.id);
   };
 
   if (loading) {
@@ -236,6 +295,22 @@ const EventRegistration = () => {
 
             <Grid item xs={12} sm={6}>
               <Box display="flex" alignItems="center" gap={1} mb={2}>
+                <PaidIcon color="action" />
+                <Box>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Registration Fee
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', color: event?.registrationFee > 0 ? 'error.main' : 'success.main' }}>
+                    {event?.registrationFee && event?.registrationFee > 0
+                      ? `₹${event.registrationFee} per person`
+                      : 'Free'}
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <Box display="flex" alignItems="center" gap={1} mb={2}>
                 <PeopleIcon color="action" />
                 <Box>
                   <Typography variant="caption" color="text.secondary" display="block">
@@ -293,12 +368,20 @@ const EventRegistration = () => {
         {user?.role === 'student' && (
           <Paper elevation={3} sx={{ p: 4 }}>
             <Typography variant="h5" gutterBottom>
-              {isAlreadyRegistered() ? 'Already Registered' : 'Register for Event'}
+              {isAlreadyRegistered() ? 'Already Registered' : isPendingPayment() ? 'Complete Your Registration' : 'Register for Event'}
             </Typography>
 
             {isAlreadyRegistered() ? (
               <Alert severity="success" icon={<CheckCircleIcon />}>
                 You are already registered for this event. We look forward to seeing you there!
+              </Alert>
+            ) : isPendingPayment() ? (
+              <Alert severity="warning" action={
+                <Button color="inherit" size="small" onClick={() => navigate(`/events/${eventId}/payment`)}>
+                  Complete Payment
+                </Button>
+              }>
+                Your registration is pending payment. Please complete the payment to confirm your spot.
               </Alert>
             ) : isRegistrationClosed() ? (
               <Alert severity="warning">
@@ -368,16 +451,114 @@ const EventRegistration = () => {
                   </Grid>
 
                   <Grid item xs={12}>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      size="large"
-                      onClick={handleRegister}
-                      disabled={submitting || !agreeTerms}
-                      startIcon={submitting ? <CircularProgress size={20} /> : <CheckCircleIcon />}
-                    >
-                      {submitting ? 'Registering...' : 'Confirm Registration'}
-                    </Button>
+                    <Grid item xs={12}>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        size="large"
+                        onClick={handleRegister}
+                        disabled={submitting || !agreeTerms}
+                        startIcon={submitting ? <CircularProgress size={20} /> : <CheckCircleIcon />}
+                      >
+                        {submitting
+                          ? 'Registering...'
+                          : (event?.registrationFee > 0 ? 'Register & Pay' : 'Confirm Registration')}
+                      </Button>
+                    </Grid>
+
+                    {/* Team Registration Form */}
+                    {event?.participationType === 'team' && (
+                      <Grid item xs={12}>
+                        <Divider sx={{ my: 2 }}>
+                          <Chip label="Team Details" />
+                        </Divider>
+
+                        <TextField
+                          fullWidth
+                          label="Team Name"
+                          value={teamData.teamName}
+                          onChange={(e) => setTeamData({ ...teamData, teamName: e.target.value })}
+                          sx={{ mb: 3 }}
+                          required
+                        />
+
+                        <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                          Team Members (You + {teamData.members.length} others)
+                        </Typography>
+
+                        {teamData.members.map((member, index) => (
+                          <Card key={index} variant="outlined" sx={{ mb: 2, p: 2, position: 'relative' }}>
+                            <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block' }}>
+                              Member #{index + 2}
+                            </Typography>
+                            <Grid container spacing={2}>
+                              <Grid item xs={12} sm={6}>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  label="Name"
+                                  value={member.name}
+                                  onChange={(e) => handleTeamMemberChange(index, 'name', e.target.value)}
+                                  required
+                                />
+                              </Grid>
+                              <Grid item xs={12} sm={6}>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  label="Branch"
+                                  value={member.branch}
+                                  onChange={(e) => handleTeamMemberChange(index, 'branch', e.target.value)}
+                                  required
+                                />
+                              </Grid>
+                              <Grid item xs={12} sm={6}>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  label="Phone"
+                                  value={member.phone}
+                                  onChange={(e) => handleTeamMemberChange(index, 'phone', e.target.value)}
+                                  required
+                                />
+                              </Grid>
+                              <Grid item xs={12} sm={6}>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  label="Email"
+                                  value={member.email}
+                                  onChange={(e) => handleTeamMemberChange(index, 'email', e.target.value)}
+                                  required
+                                />
+                              </Grid>
+                            </Grid>
+                            {/* Only allow removing if we serve above min participants */}
+                            {(teamData.members.length + 1 > (event?.teamSize?.min || 1)) && (
+                              <Button
+                                size="small"
+                                color="error"
+                                onClick={() => removeTeamMember(index)}
+                                sx={{ mt: 1 }}
+                              >
+                                Remove
+                              </Button>
+                            )}
+                          </Card>
+                        ))}
+
+                        {(teamData.members.length + 1 < (event?.teamSize?.max || 5)) && (
+                          <Button
+                            variant="outlined"
+                            onClick={addTeamMember}
+                            fullWidth
+                            sx={{ borderStyle: 'dashed' }}
+                          >
+                            + Add Team Member
+                          </Button>
+                        )}
+                      </Grid>
+                    )}
                   </Grid>
                 </Grid>
               </>
@@ -394,7 +575,7 @@ const EventRegistration = () => {
             {success}
           </Alert>
         </Snackbar>
-      </Container>
+      </Container >
     </>
   );
 };

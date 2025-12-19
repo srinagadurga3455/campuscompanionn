@@ -1,299 +1,225 @@
-# Campus Companion App 🎓
+# Campus Companion - Blockchain-Verified Campus Management System
 
-A unified campus management application combining **MERN Stack** with **Web3 Blockchain** for managing class schedules, assignments, events, and secure student identification.
+## Overview
+Campus Companion is a next-generation campus management platform that leverages blockchain technology for secure credential verification, attendance tracking, and certificate issuance.
 
-## 🌟 Features
+## Features
 
-### User Authentication & Security
-- **Email OTP Verification**: Secure registration with email verification
-- **Two-Step Registration**: Form submission → OTP verification
-- **JWT Authentication**: Secure token-based authentication
-- **Role-Based Access Control**: Student, Faculty, Club Admin, College Admin
+### 🎓 Multi-Role Dashboard System
+- **Student Dashboard**: View assignments, events, certificates, and attendance
+- **Faculty Dashboard**: Manage classes, create assignments, mark attendance
+- **College Admin Dashboard**: Oversee all campus activities and approvals
+- **Club Admin Dashboard**: Organize events and issue certificates
 
-### Multi-Role Dashboards
-- **Student Dashboard**: Timetable, events, assignments, blockchain ID, certificates & badges
-- **Faculty Dashboard**: Manage classes, assignments, announcements
-- **Club Admin Dashboard**: Create events, track participation, issue certificates
-- **College Admin Dashboard**: Approve/reject students, manage users, blockchain verification
+### 🔐 Blockchain Integration
+- Blockchain-verified student IDs
+- NFT-based certificates and badges
+- Immutable attendance records
+- Secure credential verification
 
-### Blockchain Integration
-- **Student ID Minting**: Blockchain-based IDs in `YYCCAAxxxx` format
-- **Certificates**: NFT-based tamper-proof certificates
-- **Badges**: Achievement tracking on blockchain
-- **Verification System**: Public verification of credentials
+### 📅 Event Management
+- Create and manage campus events
+- Team and individual registration support
+- Payment integration for paid events
+- Automated registration confirmation
 
-### Notifications
-- **Email Notifications**: OTP verification, approval status updates
-- **WhatsApp Notifications**: Event reminders, assignment deadlines, certificate alerts
+### 📝 Assignment System
+- Create and distribute assignments
+- Student submission portal
+- Grading and feedback system
+- Due date tracking
 
-## 🛠️ Tech Stack
+### 📊 Attendance Tracking
+- QR code-based attendance marking
+- Real-time attendance reports
+- Percentage calculations
+- Historical attendance data
 
-- **Frontend**: React.js, Material-UI, React Router, Axios
-- **Backend**: Node.js, Express.js, JWT Authentication
-- **Database**: MongoDB with Mongoose
-- **Blockchain**: Ethereum/Polygon (Hardhat, Ethers.js, Solidity)
-- **Email**: Nodemailer (OTP verification, notifications)
-- **Notifications**: WhatsApp Business API
+### 🏆 Certificate & Badge System
+- Issue digital certificates
+- NFT badge rewards
+- Certificate mailbox for students
+- Downloadable and verifiable certificates
 
-## 📁 Project Structure
+## Tech Stack
 
-```
-campus-companion/
-├── client/                 # React frontend
-│   ├── public/
-│   └── src/
-│       ├── components/     # Reusable components
-│       ├── context/        # Auth context
-│       ├── pages/          # Page components
-│       │   └── dashboards/ # Role-specific dashboards
-│       └── utils/          # API utilities
-├── server/                 # Express backend
-│   ├── config/            # DB & blockchain config
-│   ├── middleware/        # Auth & role middleware
-│   ├── models/            # MongoDB models
-│   ├── routes/            # API routes
-│   └── utils/             # WhatsApp & ID generation
-└── blockchain/            # Smart contracts
-    ├── contracts/         # Solidity contracts
-    ├── scripts/           # Deployment scripts
-    └── hardhat.config.js
-```
+### Frontend
+- **React 18** - Modern UI library
+- **Material-UI (MUI)** - Premium component library
+- **React Router** - Client-side routing
+- **Axios** - HTTP client
+- **Ethers.js** - Blockchain integration
 
-## 🚀 Getting Started
+### Backend
+- **Node.js** - Runtime environment
+- **Express.js** - Web framework
+- **MongoDB** - Database
+- **Mongoose** - ODM
+- **JWT** - Authentication
+- **Bcrypt** - Password hashing
+
+### Blockchain
+- **Ethereum** - Smart contract platform
+- **Hardhat** - Development environment
+- **Solidity** - Smart contract language
+
+## Installation
 
 ### Prerequisites
-
 - Node.js (v16 or higher)
-- MongoDB (running locally or MongoDB Atlas)
-- MetaMask wallet
-- Polygon Mumbai testnet MATIC (for deployment)
+- MongoDB (v5 or higher)
+- Git
 
-### Installation
+### Setup Instructions
 
 1. **Clone the repository**
 ```bash
-git clone <repository-url>
-cd hof
+git clone https://github.com/srinagadurga3455/hackramp.git
+cd hackramp
 ```
 
-2. **Install Backend Dependencies**
+2. **Install server dependencies**
 ```bash
 cd server
 npm install
 ```
 
-3. **Install Frontend Dependencies**
+3. **Install client dependencies**
 ```bash
 cd ../client
 npm install
 ```
 
-4. **Install Blockchain Dependencies**
-```bash
-cd ../blockchain
-npm install
-```
+4. **Configure environment variables**
 
-### Configuration
-
-1. **Backend Configuration** (`server/.env`)
+Create `.env` file in the `server` directory:
 ```env
+MONGODB_URI=mongodb://localhost:27017/hackramp
+JWT_SECRET=your_jwt_secret_key_here
 PORT=5000
-MONGODB_URI=mongodb+srv://kandasagar2006_db_user:k1SVzUgKo9gATCSz@cluster0.eckv4ap.mongodb.net/campus_companion
-JWT_SECRET=your_jwt_secret_key
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=your_email@gmail.com
-EMAIL_PASSWORD=your_app_password
-EMAIL_FROM=Campus Companion <noreply@campuscompanion.com>
-WHATSAPP_API_URL=https://graph.facebook.com/v18.0
-WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
-WHATSAPP_ACCESS_TOKEN=your_whatsapp_token
-BLOCKCHAIN_RPC_URL=https://rpc-mumbai.maticvigil.com
-PRIVATE_KEY=your_private_key
 ```
 
-**📧 Email Configuration (Required for OTP)**
-- For Gmail: Enable 2FA and create App Password at https://myaccount.google.com/apppasswords
-- See [EMAIL_OTP_QUICKSTART.md](docs/EMAIL_OTP_QUICKSTART.md) for detailed setup
-
-2. **Blockchain Configuration** (`blockchain/.env`)
-```env
-PRIVATE_KEY=your_private_key
-POLYGON_MUMBAI_RPC=https://rpc-mumbai.maticvigil.com
-```
-
-### Blockchain Deployment
-
-1. **Compile contracts**
-```bash
-cd blockchain
-npx hardhat compile
-```
-
-2. **Deploy to Mumbai testnet**
-```bash
-npx hardhat run scripts/deploy.js --network mumbai
-```
-
-3. **Copy contract addresses** from `blockchain/deployed-addresses.json` to `server/.env`
-
-### Running the Application
-
-1. **Start MongoDB** (if running locally)
-```bash
-mongod
-```
-
-2. **Start Backend Server**
+5. **Seed the database** (Optional - creates sample users)
 ```bash
 cd server
-npm run dev
+node seeds.js
 ```
 
-3. **Start Frontend**
+This creates the following test accounts:
+- **College Admin**: admin@campus.com / password123
+- **Faculty**: faculty@campus.com / password123
+- **Club Admin**: clubadmin@campus.com / password123
+- **Student**: student@campus.com / password123
+
+6. **Start the application**
+
+Open two terminal windows:
+
+Terminal 1 (Backend):
+```bash
+cd server
+npm start
+```
+
+Terminal 2 (Frontend):
 ```bash
 cd client
 npm start
 ```
 
-The app will open at `http://localhost:3000`
+The application will be available at `http://localhost:3000`
 
-## 📋 User Workflow
+## Project Structure
 
-1. **Student Registration**
-   - Student signs up with details
-   - Status: Pending approval
+```
+hackramp/
+├── client/                 # React frontend
+│   ├── public/
+│   └── src/
+│       ├── components/     # Reusable components
+│       ├── context/        # React context (Auth)
+│       ├── pages/          # Page components
+│       │   ├── dashboards/ # Role-specific dashboards
+│       │   └── attendance/ # Attendance pages
+│       └── utils/          # Utility functions
+├── server/                 # Express backend
+│   ├── models/            # Mongoose models
+│   ├── routes/            # API routes
+│   ├── middleware/        # Custom middleware
+│   └── seeds.js           # Database seeder
+└── blockchain/            # Smart contracts
+    └── contracts/         # Solidity contracts
+```
 
-2. **Admin Approval**
-   - College admin reviews registration
-   - Approves/rejects with reason
-
-3. **Blockchain ID Generation**
-   - On approval, blockchain Student ID is minted
-   - Format: `YYCCAAxxxx` (Year-College-Dept-Sequential)
-   - WhatsApp notification sent
-
-4. **Dashboard Access**
-   - Student gains access to dashboard
-   - Can view events, assignments, certificates
-
-5. **Event Participation**
-   - Register for events
-   - Receive certificates (minted on blockchain)
-   - Earn badges for achievements
-
-## 🔐 Blockchain ID Format
-
-**YYCCAAxxxx**
-- `YY`: Last 2 digits of year of admission
-- `CC`: College code (configurable, default "01")
-- `AA`: Department/course code
-- `xxxx`: Sequential number (0001-9999)
-
-Example: `2301CS0001`
-- Admitted in 2023
-- College 01
-- Computer Science department
-- First student
-
-## 🎯 API Endpoints
+## API Endpoints
 
 ### Authentication
-- `POST /api/auth/send-otp` - Send OTP for registration
-- `POST /api/auth/verify-otp` - Verify OTP and complete registration
-- `POST /api/auth/register` - Register new user (legacy)
-- `POST /api/auth/login` - Login user (requires email verification)
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - User login
 - `GET /api/auth/me` - Get current user
-
-### Users
-- `GET /api/users/pending` - Get pending approvals (admin)
-- `PUT /api/users/:id/approve` - Approve user (admin)
-- `PUT /api/users/:id/reject` - Reject user (admin)
 
 ### Events
 - `GET /api/events` - Get all events
-- `POST /api/events` - Create event (admin)
+- `POST /api/events` - Create event
+- `GET /api/events/:id` - Get event details
 - `POST /api/events/:id/register` - Register for event
+- `POST /api/events/:id/verify-payment` - Verify payment
 
 ### Assignments
 - `GET /api/assignments` - Get assignments
-- `POST /api/assignments` - Create assignment (faculty)
+- `POST /api/assignments` - Create assignment
 - `POST /api/assignments/:id/submit` - Submit assignment
 
 ### Certificates
-- `POST /api/certificates` - Issue certificate (admin)
-- `GET /api/certificates/verify/:id` - Verify certificate
+- `GET /api/certificates` - Get certificates
+- `POST /api/certificates` - Issue certificate
+- `PUT /api/certificates/claim/:id` - Claim certificate
 
-### Blockchain
-- `GET /api/blockchain/student/:blockchainId` - Get student from blockchain
-- `POST /api/blockchain/verify/student/:blockchainId` - Verify student ID
+### Attendance
+- `POST /api/attendance/mark` - Mark attendance
+- `GET /api/attendance/student/:id` - Get student attendance
 
-## 🏆 Hackathon Highlights
+## Key Features Explained
 
-This project combines:
-- **Full-Stack Development**: Complete MERN application
-- **Web3 Integration**: Blockchain-based credentials
-- **Real-Time Notifications**: WhatsApp Business API
-- **Practical Solution**: Solves real campus management problems
-- **Scalability**: Modular architecture, ready for deployment
-- **Security**: JWT auth, blockchain verification, tamper-proof records
+### Payment Integration
+- Events can have registration fees
+- Students register and are added to pending list
+- Payment page guides through payment process
+- Transaction ID verification confirms registration
 
-## 📝 Smart Contracts
+### Certificate Mailbox
+- Unclaimed certificates appear in student mailbox
+- One-click claim process
+- Certificates become downloadable after claiming
+- Blockchain verification available
 
-### StudentId.sol
-- Mints unique student IDs on blockchain
-- Manages student verification
-- Tracks active/inactive status
+### Attendance System
+- Faculty generates QR codes for classes
+- Students scan to mark attendance
+- Real-time attendance percentage calculation
+- Detailed attendance reports
 
-### Certificate.sol
-- ERC-721 NFT-based certificates
-- Tamper-proof record keeping
-- Public verification
+## Design Philosophy
 
-### Badge.sol
-- ERC-721 NFT-based badges
-- Achievement tracking
-- Skill recognition
+### Modern UI/UX
+- Clean, minimalist design
+- Smooth animations and transitions
+- Responsive layout for all devices
+- Glassmorphism and modern aesthetics
 
-## 🔧 Development
+### Security
+- JWT-based authentication
+- Password hashing with bcrypt
+- Role-based access control
+- Protected routes
 
-### Run tests
-```bash
-cd blockchain
-npx hardhat test
-```
+### Performance
+- Optimized React components
+- Efficient database queries
+- Lazy loading where applicable
+- Minimal bundle size
 
-### Local blockchain
-```bash
-npx hardhat node
-```
-
-## � Documentation
-
-- [Quick Start Guide](QUICK_START.md) - Get started quickly
-- [API Documentation](docs/API_DOCUMENTATION.md) - Complete API reference
-- [Email OTP Setup](docs/EMAIL_OTP_QUICKSTART.md) - Email verification guide
-- [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment
-- [Architecture](docs/ARCHITECTURE.md) - System architecture
-- [Documentation Index](docs/DOCUMENTATION_INDEX.md) - All documentation
-
-## 📱 Email & WhatsApp Integration
-
-### Email Configuration
-1. Configure email credentials in `server/.env`
-2. For Gmail: Enable 2FA and create App Password
-3. Test OTP delivery before production
-4. See [EMAIL_OTP_QUICKSTART.md](docs/EMAIL_OTP_QUICKSTART.md) for details
-
-### WhatsApp Integration
-1. Create a WhatsApp Business Account
-2. Get API credentials from Meta for Developers
-3. Add credentials to `server/.env`
-4. Phone numbers must include country code (e.g., +91xxxxxxxxxx)
-
-## 🤝 Contributing
-
+## Contributing
 Contributions are welcome! Please follow these steps:
 1. Fork the repository
 2. Create a feature branch
@@ -301,23 +227,13 @@ Contributions are welcome! Please follow these steps:
 4. Push to the branch
 5. Open a pull request
 
-## 📄 License
+## License
+This project is licensed under the MIT License.
 
-MIT License - feel free to use this project for learning and development.
+## Support
+For issues or questions, please open an issue on GitHub.
 
-## 👥 Team
-
-Developed for hackathon submission showcasing MERN Stack + Web3 integration.
-
-## 🙏 Acknowledgments
-
-- OpenZeppelin for smart contract libraries
-- Material-UI for React components
-- Hardhat for blockchain development framework
-- WhatsApp Business API for notifications
-
----
-
-**Note**: This is a demonstration project. For production use, implement additional security measures, error handling, and testing.
-#   h o f  
- 
+## Acknowledgments
+- Material-UI for the component library
+- MongoDB for the database
+- Ethereum for blockchain infrastructure

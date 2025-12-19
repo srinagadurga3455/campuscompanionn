@@ -45,12 +45,23 @@ const certificateSchema = new mongoose.Schema({
   verificationUrl: {
     type: String
   },
+  certificateFile: {
+    type: String  // Path to uploaded certificate file
+  },
+  fileType: {
+    type: String,
+    enum: ['pdf', 'png', 'jpg', 'jpeg']
+  },
   metadata: {
     type: Object
   },
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  isClaimed: {
+    type: Boolean,
+    default: false
   }
 });
 

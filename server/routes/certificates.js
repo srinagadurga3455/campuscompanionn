@@ -4,13 +4,45 @@ const Certificate = require('../models/Certificate');
 const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
 const roleMiddleware = require('../middleware/roleCheck');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { getCertificateContract } = require('../config/blockchain');
 const { sendCertificateNotification } = require('../utils/whatsapp');
 
+// Configure multer for certificate file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../uploads/certificates');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'cert-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /pdf|png|jpg|jpeg/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) {
+      return cb(null, true);
+    }
+    cb(new Error('Only PDF, PNG, and JPG files are allowed'));
+  }
+});
+
 // @route   POST /api/certificates
 // @desc    Issue a certificate
-// @access  Private (club_admin, college_admin)
-router.post('/', authMiddleware, roleMiddleware('club_admin', 'college_admin'), async (req, res) => {
+// @access  Private (club_admin, college_admin, faculty)
+router.post('/', authMiddleware, roleMiddleware('club_admin', 'college_admin', 'faculty'), upload.single('certificateFile'), async (req, res) => {
   try {
     const {
       title,
@@ -28,7 +60,7 @@ router.post('/', authMiddleware, roleMiddleware('club_admin', 'college_admin'), 
     }
 
     // Create certificate in database
-    const certificate = new Certificate({
+    const certificateData = {
       title,
       description,
       recipient,
@@ -36,7 +68,15 @@ router.post('/', authMiddleware, roleMiddleware('club_admin', 'college_admin'), 
       issuer: req.user.id,
       certificateType,
       metadata
-    });
+    };
+
+    // Add file information if uploaded
+    if (req.file) {
+      certificateData.certificateFile = `/uploads/certificates/${req.file.filename}`;
+      certificateData.fileType = path.extname(req.file.originalname).substring(1).toLowerCase();
+    }
+
+    const certificate = new Certificate(certificateData);
 
     await certificate.save();
 
@@ -151,8 +191,8 @@ router.get('/verify/:id', async (req, res) => {
       .populate('issuer', 'name');
 
     if (!certificate) {
-      return res.status(404).json({ 
-        success: false, 
+      return res.status(404).json({
+        success: false,
         message: 'Certificate not found',
         verified: false
       });
@@ -184,6 +224,32 @@ router.get('/verify/:id', async (req, res) => {
     });
   } catch (error) {
     console.error('Verify certificate error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/certificates/claim/:id
+// @desc    Mark certificate as claimed
+// @access  Private
+router.put('/claim/:id', authMiddleware, async (req, res) => {
+  try {
+    const certificate = await Certificate.findById(req.params.id);
+
+    if (!certificate) {
+      return res.status(404).json({ success: false, message: 'Certificate not found' });
+    }
+
+    // Ensure the user owns the certificate
+    if (certificate.recipient.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    certificate.isClaimed = true;
+    await certificate.save();
+
+    res.json({ success: true, message: 'Certificate claimed successfully', certificate });
+  } catch (error) {
+    console.error('Claim certificate error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });

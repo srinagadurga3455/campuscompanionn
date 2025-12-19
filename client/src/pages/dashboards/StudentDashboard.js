@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Navbar from '../../components/Navbar';
 import {
@@ -12,7 +12,9 @@ import {
   Button,
   Chip,
   Divider,
+  LinearProgress,
 } from '@mui/material';
+// ...
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import EventIcon from '@mui/icons-material/Event';
@@ -22,11 +24,26 @@ import BadgeIcon from '@mui/icons-material/Badge';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SchoolIcon from '@mui/icons-material/School';
+import MailIcon from '@mui/icons-material/Mail';
+import PaidIcon from '@mui/icons-material/Paid';
 import api from '../../utils/api';
 
 const StudentDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.scrollToMailbox) {
+      const mailboxElement = document.getElementById('mailbox');
+      if (mailboxElement) {
+        mailboxElement.scrollIntoView({ behavior: 'smooth' });
+        // Clear state to prevent scrolling on subsequent renders
+        navigate(location.pathname, { replace: true, state: {} });
+      }
+    }
+  }, [location.state, navigate]);
+
   const [stats, setStats] = useState({
     eventsRegistered: 0,
     assignmentsPending: 0,
@@ -36,6 +53,8 @@ const StudentDashboard = () => {
   });
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [recentAssignments, setRecentAssignments] = useState([]);
+  const [myCertificates, setMyCertificates] = useState([]);
+  const [unclaimedCertificates, setUnclaimedCertificates] = useState([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -57,7 +76,11 @@ const StudentDashboard = () => {
       }).length;
 
       const certsRes = await api.get('/certificates');
-      const certs = certsRes.data.certificates || [];
+      const allCerts = certsRes.data.certificates || [];
+      const claimed = allCerts.filter(c => c.isClaimed);
+      const unclaimed = allCerts.filter(c => !c.isClaimed);
+      setMyCertificates(claimed);
+      setUnclaimedCertificates(unclaimed);
 
       const badgesRes = await api.get('/badges');
       const badges = badgesRes.data.badges || [];
@@ -77,7 +100,9 @@ const StudentDashboard = () => {
       setStats({
         eventsRegistered: registeredEventsCount,
         assignmentsPending: pending,
-        certificates: certs.length,
+        eventsRegistered: registeredEventsCount,
+        assignmentsPending: pending,
+        certificates: claimed.length,
         badges: badges.length,
         attendancePercentage,
       });
@@ -86,11 +111,23 @@ const StudentDashboard = () => {
     }
   };
 
+  const handleClaimCertificate = async (certId) => {
+    try {
+      await api.put(`/certificates/claim/${certId}`);
+      // Move from unclaimed to claimed
+      const cert = unclaimedCertificates.find(c => c._id === certId);
+      setUnclaimedCertificates(prev => prev.filter(c => c._id !== certId));
+      setMyCertificates(prev => [cert, ...prev]);
+    } catch (error) {
+      console.error('Error claiming certificate:', error);
+    }
+  };
+
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 8 }}>
       <Navbar title="Student Center" />
 
-      <Container maxWidth="lg" sx={{ mt: { xs: 4, md: 6 } }}>
+      <Container maxWidth="lg" sx={{ mt: { xs: 10, md: 12 }, pt: 2 }}>
         {/* Modern Header Section */}
         <Paper
           elevation={0}
@@ -148,10 +185,64 @@ const StudentDashboard = () => {
           </Grid>
         </Paper>
 
+        {/* Mailbox Section */}
+        {unclaimedCertificates.length > 0 && (
+          <Paper
+            id="mailbox"
+            elevation={0}
+            sx={{
+              p: 4,
+              mb: 6,
+              borderRadius: '24px',
+              border: '1px solid',
+              borderColor: 'primary.main',
+              bgcolor: 'rgba(79,70,229,0.04)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+              <Box sx={{ p: 1.5, borderRadius: '12px', bgcolor: 'primary.main', color: 'white', mr: 2 }}>
+                <MailIcon />
+              </Box>
+              <Box>
+                <Typography variant="h5" sx={{ fontWeight: 800 }}>Certificate Mailbox</Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  You have {unclaimedCertificates.length} unclaimed certificates waiting for you!
+                </Typography>
+              </Box>
+            </Box>
+
+            <Grid container spacing={3}>
+              {unclaimedCertificates.map((cert) => (
+                <Grid item xs={12} md={6} key={cert._id}>
+                  <Card sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}>
+                    <CardContent sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 700 }}>{cert.title}</Typography>
+                        <Typography variant="caption" sx={{ color: 'text.muted' }}>
+                          Issued by: {cert.issuer?.name || 'Admin'}
+                        </Typography>
+                      </Box>
+                      <Button
+                        variant="contained"
+                        onClick={() => handleClaimCertificate(cert._id)}
+                        sx={{ borderRadius: '8px', fontWeight: 700, px: 3 }}
+                      >
+                        Claim
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Paper>
+        )}
+
         {/* Quick Stats Grid */}
         <Grid container spacing={3} sx={{ mb: 6 }}>
           {[
-            { label: 'Attendance', value: `${stats.attendancePercentage}%`, icon: <TrendingUpIcon />, color: '#10b981' },
+
             { label: 'Assignments', value: stats.assignmentsPending, icon: <AssignmentIcon />, color: '#6366f1' },
             { label: 'NFT Badges', value: stats.badges, icon: <BadgeIcon />, color: '#f59e0b' },
             { label: 'Cerificates', value: stats.certificates, icon: <EmojiEventsIcon />, color: '#8b5cf6' },
@@ -181,6 +272,58 @@ const StudentDashboard = () => {
             </Grid>
           ))}
         </Grid>
+
+
+        {/* Pending Payments Section */}
+        {upcomingEvents.some(e => e.pendingRegistrations?.some(p => p.user === user?.id || p.user?._id === user?.id)) && (
+          <Paper
+            sx={{
+              p: 3,
+              mb: 4,
+              borderRadius: '20px',
+              bgcolor: '#fff7ed',
+              border: '1px solid',
+              borderColor: '#fdba74'
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Box sx={{ p: 1, bgcolor: 'warning.main', borderRadius: '50%', color: 'white', mr: 2 }}>
+                <PaidIcon />
+              </Box>
+              <Box>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: 'warning.dark' }}>Action Required: Complete Payment</Typography>
+                <Typography variant="body2" sx={{ color: 'warning.dark' }}>
+                  You have pending registrations that require payment confirmation.
+                </Typography>
+              </Box>
+            </Box>
+            <Grid container spacing={2}>
+              {upcomingEvents
+                .filter(e => e.pendingRegistrations?.some(p => p.user === user?.id || p.user?._id === user?.id))
+                .map(event => (
+                  <Grid item xs={12} md={6} key={event._id}>
+                    <Card sx={{ borderRadius: '12px', border: '1px solid', borderColor: 'warning.light' }}>
+                      <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
+                        <Box>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{event.title}</Typography>
+                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>Amount: ₹{event.registrationFee}</Typography>
+                        </Box>
+                        <Button
+                          variant="contained"
+                          color="warning"
+                          size="small"
+                          onClick={() => navigate(`/events/${event._id}/payment`)}
+                        >
+                          Pay Now
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))
+              }
+            </Grid>
+          </Paper>
+        )}
 
         <Grid container spacing={4}>
           {/* Recent Assignments */}
@@ -215,11 +358,21 @@ const StudentDashboard = () => {
           <Grid item xs={12} md={5}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Typography variant="h5" sx={{ fontWeight: 800 }}>Events Feed</Typography>
-              <Button size="small" sx={{ fontWeight: 700 }}>Explore</Button>
+              <Button size="small" sx={{ fontWeight: 700 }} onClick={() => navigate('/events')}>Explore</Button>
             </Box>
             <Stack spacing={2}>
               {upcomingEvents.length > 0 ? upcomingEvents.map((event, i) => (
-                <Card key={i} sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}>
+                <Card
+                  key={i}
+                  sx={{
+                    borderRadius: '16px',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    cursor: 'pointer',
+                    '&:hover': { borderColor: 'primary.main', bgcolor: 'rgba(79,70,229,0.02)' }
+                  }}
+                  onClick={() => navigate(`/events/${event._id}/register`)}
+                >
                   <CardContent sx={{ p: 2.5 }}>
                     <Box sx={{ display: 'flex', gap: 2 }}>
                       <Box sx={{ p: 1.5, borderRadius: '12px', bgcolor: 'rgba(0,0,0,0.03)', height: 'fit-content' }}>
@@ -227,7 +380,9 @@ const StudentDashboard = () => {
                       </Box>
                       <Box>
                         <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5 }}>{event.title}</Typography>
-                        <Typography variant="caption" sx={{ color: 'text.muted', display: 'block' }}>{new Date(event.date).toDateString()}</Typography>
+                        <Typography variant="caption" sx={{ color: 'text.muted', display: 'block' }}>
+                          {event.startDate ? new Date(event.startDate).toDateString() : 'Date TBD'}
+                        </Typography>
                       </Box>
                     </Box>
                   </CardContent>
@@ -240,6 +395,104 @@ const StudentDashboard = () => {
             </Stack>
           </Grid>
         </Grid>
+
+        {/* My Certificates Section */}
+        {myCertificates.length > 0 && (
+          <Box sx={{ mt: 6 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                My Certificates
+              </Typography>
+              <Chip label={`${myCertificates.length} Total`} sx={{ fontWeight: 700 }} />
+            </Box>
+
+            <Grid container spacing={3}>
+              {myCertificates.map((cert) => (
+                <Grid item xs={12} sm={6} md={4} key={cert._id}>
+                  <Card
+                    sx={{
+                      height: '100%',
+                      borderRadius: '16px',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: 3
+                      }
+                    }}
+                  >
+                    <CardContent sx={{ p: 3 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        <EmojiEventsIcon sx={{ color: 'primary.main', fontSize: 32, mr: 1.5 }} />
+                        <Box>
+                          <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                            {cert.title}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: 'text.muted' }}>
+                            {new Date(cert.issuedDate).toLocaleDateString()}
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+                        {cert.description}
+                      </Typography>
+
+                      {cert.event && (
+                        <Chip
+                          label={cert.event.title}
+                          size="small"
+                          sx={{ mb: 2, fontWeight: 600 }}
+                        />
+                      )}
+
+                      <Divider sx={{ my: 2 }} />
+
+                      <Stack direction="row" spacing={1}>
+                        {cert.certificateFile && (
+                          <Button
+                            variant="contained"
+                            size="small"
+                            fullWidth
+                            onClick={() => window.open(`http://localhost:5000${cert.certificateFile}`, '_blank')}
+                            sx={{ fontWeight: 700, borderRadius: '8px' }}
+                          >
+                            View
+                          </Button>
+                        )}
+                        {cert.certificateFile && (
+                          <Button
+                            variant="contained"
+                            size="small"
+                            fullWidth
+                            component="a"
+                            href={`http://localhost:5000${cert.certificateFile}`}
+                            download
+                            sx={{ fontWeight: 700, borderRadius: '8px', bgcolor: 'success.main', '&:hover': { bgcolor: 'success.dark' } }}
+                          >
+                            Download
+                          </Button>
+                        )}
+                        {cert.verificationUrl && (
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            fullWidth
+                            onClick={() => window.open(cert.verificationUrl, '_blank')}
+                            sx={{ fontWeight: 700, borderRadius: '8px' }}
+                          >
+                            Verify
+                          </Button>
+                        )}
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
+        )}
       </Container>
     </Box>
   );

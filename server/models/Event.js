@@ -60,6 +60,56 @@ const eventSchema = new mongoose.Schema({
     enum: ['upcoming', 'ongoing', 'completed', 'cancelled'],
     default: 'upcoming'
   },
+  participationType: {
+    type: String,
+    enum: ['individual', 'team'],
+    default: 'individual'
+  },
+  teamSize: {
+    min: { type: Number, default: 1 },
+    max: { type: Number, default: 1 }
+  },
+  registrationFee: {
+    type: Number,
+    default: 0
+  },
+  paymentLink: {
+    type: String
+  },
+  pendingRegistrations: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    phoneNumber: String,
+    reason: String,
+    teamData: {
+      teamName: String,
+      members: [{
+        name: String,
+        branch: String,
+        phone: String,
+        email: String
+      }]
+    },
+    registeredAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  teamRegistrations: [{
+    leader: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    teamName: String,
+    members: [{
+      name: String,
+      branch: String,
+      phone: String,
+      email: String
+    }]
+  }],
   certificateIssued: {
     type: Boolean,
     default: false

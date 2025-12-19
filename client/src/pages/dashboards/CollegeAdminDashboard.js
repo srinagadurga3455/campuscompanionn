@@ -36,6 +36,7 @@ import api from '../../utils/api';
 const CollegeAdminDashboard = () => {
   const { user } = useAuth();
   const [pendingUsers, setPendingUsers] = useState([]);
+  const [pendingEvents, setPendingEvents] = useState([]);
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalFaculty: 0,
@@ -55,11 +56,13 @@ const CollegeAdminDashboard = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const [usersRes, statsRes] = await Promise.all([
+      const [usersRes, statsRes, eventsRes] = await Promise.all([
         api.get('/college-admin/pending-users'),
-        api.get('/college-admin/stats')
+        api.get('/college-admin/stats'),
+        api.get('/events?approvalStatus=pending')
       ]);
       setPendingUsers(usersRes.data.users || []);
+      setPendingEvents(eventsRes.data.events || []);
       setStats(statsRes.data.stats || {
         totalStudents: 0,
         totalFaculty: 0,
@@ -81,6 +84,16 @@ const CollegeAdminDashboard = () => {
       fetchDashboardData();
     } catch (error) {
       showSnackbar(error.response?.data?.message || 'Approval failed', 'error');
+    }
+  };
+
+  const handleEventAction = async (eventId, action) => {
+    try {
+      await api.put(`/events/${eventId}/approve`, { approvalStatus: action });
+      showSnackbar(`Event ${action} successfully`);
+      fetchDashboardData();
+    } catch (error) {
+      showSnackbar(error.response?.data?.message || `Event ${action} failed`, 'error');
     }
   };
 
@@ -246,6 +259,82 @@ const CollegeAdminDashboard = () => {
             <Box sx={{ textAlign: 'center', py: 12, bgcolor: 'rgba(0,0,0,1)', borderRadius: '16px', border: '1px dashed', borderColor: 'divider' }}>
               <CheckCircleIcon sx={{ fontSize: 48, color: 'text.muted', mb: 2, opacity: 0.2 }} />
               <Typography variant="body1" sx={{ color: 'text.muted', fontWeight: 600 }}>Queue cleared. All verified.</Typography>
+            </Box>
+          )}
+        </Paper>
+
+        {/* Pending Events Section */}
+        <Paper sx={{ p: 4, borderRadius: '24px', mt: 6 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <PendingActionsIcon sx={{ color: 'warning.main' }} />
+              <Typography variant="h5" sx={{ fontWeight: 800 }}>Event Approvals</Typography>
+            </Box>
+            <Chip
+              label={`${pendingEvents.length} Pending`}
+              sx={{ fontWeight: 800, bgcolor: 'warning.main', color: 'black', px: 1 }}
+            />
+          </Box>
+
+          {loading ? (
+            <Box sx={{ textAlign: 'center', py: 5 }}>
+              <CircularProgress />
+            </Box>
+          ) : pendingEvents.length > 0 ? (
+            <Table>
+              <TableHead>
+                <TableRow sx={{ '& th': { fontWeight: 800, color: 'text.secondary' } }}>
+                  <TableCell>Event</TableCell>
+                  <TableCell>Organizer</TableCell>
+                  <TableCell>Date</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {pendingEvents.map((event) => (
+                  <TableRow key={event._id}>
+                    <TableCell>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{event.title}</Typography>
+                      <Typography variant="caption" color="text.secondary">{event.description.substring(0, 50)}...</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">{event.organizer?.name || 'Unknown'}</Typography>
+                      <Typography variant="caption" color="text.secondary">{event.club?.name || 'Individual'}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(event.startDate).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={event.eventType} size="small" />
+                    </TableCell>
+                    <TableCell align="right">
+                      <Stack direction="row" spacing={1} justifyContent="flex-end">
+                        <Button
+                          variant="contained"
+                          color="success"
+                          size="small"
+                          onClick={() => handleEventAction(event._id, 'approved')}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          onClick={() => handleEventAction(event._id, 'rejected')}
+                        >
+                          Reject
+                        </Button>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <Box sx={{ p: 4, textAlign: 'center', bgcolor: 'rgba(0,0,0,0.02)', borderRadius: 2 }}>
+              <Typography color="text.secondary">No pending events to review</Typography>
             </Box>
           )}
         </Paper>

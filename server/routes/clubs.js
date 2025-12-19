@@ -53,6 +53,28 @@ router.get('/', async (req, res) => {
   }
 });
 
+// @route   GET /api/clubs/my-club
+// @desc    Get club managed by current user
+// @access  Private (club_admin)
+router.get('/my-club', authMiddleware, roleMiddleware('club_admin'), async (req, res) => {
+  try {
+    const club = await Club.findOne({ admin: req.user.id })
+      .populate('admin', 'name email')
+      .populate('members.user', 'name email blockchainId')
+      .populate('events');
+
+    if (!club) {
+      return res.status(404).json({ success: false, message: 'No club found for this admin' });
+    }
+
+    res.json({ success: true, club });
+  } catch (error) {
+    console.error('Get my club error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+
 // @route   GET /api/clubs/:id
 // @desc    Get club by ID
 // @access  Public

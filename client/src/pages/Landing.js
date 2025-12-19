@@ -62,30 +62,28 @@ const Landing = () => {
 
       {/* Hero Section */}
       <Box
+        className="bg-image-overlay"
         sx={{
-          pt: { xs: 12, md: 20 },
+          pt: { xs: 6, md: 10 },
           pb: { xs: 8, md: 12 },
-          position: 'relative',
+          minHeight: '80vh',
+          display: 'flex',
+          alignItems: 'center',
+          backgroundImage: 'url("/assets/university_campus.png")',
           overflow: 'hidden'
         }}
       >
-        <Box
-          sx={{
-            position: 'absolute',
-            top: -100,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '100%',
-            maxWidth: '1200px',
-            height: '400px',
-            background: 'radial-gradient(circle, rgba(79,70,229,0.05) 0%, transparent 70%)',
-            filter: 'blur(80px)',
-            zIndex: 0
-          }}
-        />
-
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
-          <Box sx={{ textAlign: 'center', mb: 8 }}>
+          <Box
+            className="glass-plate"
+            sx={{
+              p: { xs: 4, md: 8 },
+              maxWidth: '800px',
+              mx: 'auto',
+              textAlign: 'center',
+              animation: 'slideUp 0.8s ease-out'
+            }}
+          >
             <Box
               sx={{
                 display: 'inline-flex',
@@ -99,7 +97,6 @@ const Landing = () => {
                 fontSize: '0.875rem',
                 fontWeight: 600,
                 mb: 4,
-                animation: 'fadeIn 0.6s ease-out'
               }}
             >
               <VerifiedIcon sx={{ fontSize: 16, mr: 1 }} /> Verified Campus Ecosystem
@@ -108,10 +105,12 @@ const Landing = () => {
             <Typography
               variant="h1"
               sx={{
-                fontSize: { xs: '3rem', md: '5rem' },
+                fontSize: { xs: '2.5rem', md: '4.5rem' },
+                fontWeight: 900,
                 lineHeight: 1.1,
                 mb: 3,
-                className: 'animate-fade-in'
+                letterSpacing: '-0.03em',
+                color: 'text.primary'
               }}
             >
               The Next Frontier Of <br />
@@ -122,11 +121,12 @@ const Landing = () => {
               variant="h6"
               sx={{
                 color: 'text.secondary',
-                maxWidth: '700px',
+                maxWidth: '600px',
                 mx: 'auto',
                 mb: 5,
-                fontWeight: 400,
-                lineHeight: 1.6
+                fontWeight: 500,
+                lineHeight: 1.6,
+                fontSize: { xs: '1rem', md: '1.25rem' }
               }}
             >
               Empower your institution with blockchain-verified credentials, precision tracking, and a unified digital hub for students and faculty.
@@ -137,7 +137,14 @@ const Landing = () => {
                 variant="contained"
                 size="large"
                 onClick={() => navigate('/register')}
-                sx={{ px: 4, py: 1.8, fontSize: '1rem', fontWeight: 700 }}
+                sx={{
+                  px: 5,
+                  py: 2,
+                  fontSize: '1rem',
+                  fontWeight: 800,
+                  borderRadius: '12px',
+                  boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.4)'
+                }}
               >
                 Join the Future
               </Button>
@@ -145,9 +152,17 @@ const Landing = () => {
                 variant="outlined"
                 size="large"
                 onClick={() => navigate('/login')}
-                sx={{ px: 4, py: 1.8, fontSize: '1rem', fontWeight: 600 }}
+                sx={{
+                  px: 5,
+                  py: 2,
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  borderRadius: '12px',
+                  borderWidth: '2px',
+                  '&:hover': { borderWidth: '2px' }
+                }}
               >
-                Launch App
+                Sign In
               </Button>
             </Stack>
           </Box>
@@ -218,21 +233,38 @@ const Landing = () => {
       </Container>
 
       {/* Footer CTA */}
-      <Box sx={{ bgcolor: 'rgba(79,70,229,0.03)', py: 12, borderTop: '1px solid', borderColor: 'divider' }}>
-        <Container maxWidth="md" sx={{ textAlign: 'center' }}>
-          <Typography variant="h3" sx={{ mb: 3 }}>Ready to transform your campus?</Typography>
-          <Typography variant="body1" sx={{ color: 'text.secondary', mb: 5, maxWidth: '600px', mx: 'auto' }}>
-            Join hundreds of institutions already using Campus Companion to streamline their operations and secure their credentials.
-          </Typography>
-          <Button
-            variant="contained"
-            size="large"
-            endIcon={<ArrowForwardIcon />}
-            onClick={() => navigate('/register')}
-            sx={{ px: 6, py: 2, borderRadius: '12px', fontWeight: 800 }}
-          >
-            Get Started Now
-          </Button>
+      <Box
+        className="bg-image-overlay"
+        sx={{
+          backgroundImage: 'url("/assets/university_hall.png")',
+          py: 16,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+          backgroundAttachment: 'scroll' // Hall looks better scrolled normally here
+        }}
+      >
+        <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+          <Box className="glass-plate" sx={{ p: { xs: 4, md: 8 } }}>
+            <Typography variant="h3" sx={{ mb: 3, fontWeight: 800 }}>Ready to transform your campus?</Typography>
+            <Typography variant="body1" sx={{ color: 'text.secondary', mb: 5, maxWidth: '600px', mx: 'auto', fontWeight: 500 }}>
+              Join hundreds of institutions already using Campus Companion to streamline their operations and secure their credentials.
+            </Typography>
+            <Button
+              variant="contained"
+              size="large"
+              endIcon={<ArrowForwardIcon />}
+              onClick={() => navigate('/register')}
+              sx={{
+                px: 6,
+                py: 2.2,
+                borderRadius: '12px',
+                fontWeight: 800,
+                boxShadow: '0 10px 20px -5px rgba(79, 70, 229, 0.4)'
+              }}
+            >
+              Get Started Now
+            </Button>
+          </Box>
         </Container>
       </Box>
     </Box>

@@ -17,6 +17,13 @@ import StudentAttendance from './pages/attendance/ViewAttendance';
 import MyClasses from './pages/MyClasses';
 import CreateAssignment from './pages/CreateAssignment';
 import Assignments from './pages/Assignments';
+import AssignmentDetails from './pages/AssignmentDetails';
+import Events from './pages/Events';
+import EventRegistration from './pages/EventRegistration';
+import CreateEvent from './pages/CreateEvent';
+import IssueCertificates from './pages/IssueCertificates';
+import AttendanceReport from './pages/AttendanceReport';
+import PaymentPage from './pages/PaymentPage';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -228,7 +235,7 @@ function App() {
               path="/attendance"
               element={
                 <ProtectedRoute allowedRoles={['student']}>
-                  <StudentAttendance />
+                  <AttendanceReport />
                 </ProtectedRoute>
               }
             />
@@ -253,6 +260,54 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Assignments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/assignments/:id"
+              element={
+                <ProtectedRoute>
+                  <AssignmentDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/events"
+              element={
+                <ProtectedRoute>
+                  <Events />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/events/:eventId/register"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <EventRegistration />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/create-event"
+              element={
+                <ProtectedRoute allowedRoles={['club_admin']}>
+                  <CreateEvent />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/issue-certificates"
+              element={
+                <ProtectedRoute allowedRoles={['club_admin']}>
+                  <IssueCertificates />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/events/:eventId/payment"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <PaymentPage />
                 </ProtectedRoute>
               }
             />

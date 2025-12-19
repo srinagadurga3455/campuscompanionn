@@ -22,7 +22,11 @@ router.post('/', authMiddleware, roleMiddleware('club_admin', 'college_admin'), 
       venue,
       maxParticipants,
       registrationDeadline,
-      images
+      images,
+      participationType,
+      teamSize,
+      registrationFee,
+      paymentLink
     } = req.body;
 
     const event = new Event({
@@ -38,6 +42,10 @@ router.post('/', authMiddleware, roleMiddleware('club_admin', 'college_admin'), 
       maxParticipants,
       registrationDeadline,
       images,
+      participationType,
+      teamSize,
+      registrationFee,
+      paymentLink,
       // College admins can auto-approve their events, club admins need approval
       approvalStatus: req.user.role === 'college_admin' ? 'approved' : 'pending'
     });
@@ -49,7 +57,7 @@ router.post('/', authMiddleware, roleMiddleware('club_admin', 'college_admin'), 
 
     res.status(201).json({
       success: true,
-      message: req.user.role === 'college_admin' 
+      message: req.user.role === 'college_admin'
         ? 'Event created and approved successfully'
         : 'Event created successfully. Waiting for admin approval.',
       event
@@ -65,14 +73,15 @@ router.post('/', authMiddleware, roleMiddleware('club_admin', 'college_admin'), 
 // @access  Private
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const { eventType, status, club, department, upcoming } = req.query;
+    const { eventType, status, club, department, upcoming, approvalStatus } = req.query;
     const filter = {};
 
     if (eventType) filter.eventType = eventType;
     if (status) filter.status = status;
     if (club) filter.club = club;
     if (department) filter.department = department;
-    
+    if (approvalStatus) filter.approvalStatus = approvalStatus;
+
     // Filter by approval status based on user role
     if (req.user.role === 'student' || req.user.role === 'faculty') {
       // Students and faculty only see approved events
@@ -82,7 +91,7 @@ router.get('/', authMiddleware, async (req, res) => {
       filter.organizer = req.user.id;
     }
     // College admins see all events (no approval filter)
-    
+
     // Filter by authenticated user's department if they're student or faculty
     if (req.user && (req.user.role === 'student' || req.user.role === 'faculty')) {
       if (req.user.department) {
@@ -93,7 +102,7 @@ router.get('/', authMiddleware, async (req, res) => {
         ];
       }
     }
-    
+
     if (upcoming === 'true') {
       filter.startDate = { $gte: new Date() };
       filter.status = 'upcoming';
@@ -103,6 +112,7 @@ router.get('/', authMiddleware, async (req, res) => {
       .populate('organizer', 'name email')
       .populate('club', 'name')
       .populate('department', 'name')
+      .populate('participants', 'name email blockchainId')
       .sort({ startDate: 1 });
 
     res.json({ success: true, events });
@@ -208,6 +218,20 @@ router.post('/:id/register', authMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Already registered for this event' });
     }
 
+    // Check if payment is pending
+    const existingPending = event.pendingRegistrations?.find(
+      p => p.user.toString() === req.user.id
+    );
+
+    if (existingPending) {
+      return res.json({
+        success: true,
+        message: 'Payment pending',
+        paymentRequired: true,
+        event
+      });
+    }
+
     // Check max participants
     if (event.maxParticipants && event.participants.length >= event.maxParticipants) {
       return res.status(400).json({ success: false, message: 'Event is full' });
@@ -218,7 +242,38 @@ router.post('/:id/register', authMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Registration deadline has passed' });
     }
 
-    // Add participant
+    // Handle Team Registration
+    if (event.participationType === 'team') {
+      const { teamName, members } = req.body;
+
+      if (!teamName || !members) {
+        return res.status(400).json({ success: false, message: 'Team details are required' });
+      }
+
+      // Validate team size (excluding leader) -> Total size = members.length + 1 (leader)
+      // Check if teamSize is defined, otherwise default to 1-1
+      const minSize = event.teamSize?.min || 1;
+      const maxSize = event.teamSize?.max || 1;
+
+      // We assume 'members' contains the team mates. Total team size = 1 (leader) + members.length
+      const totalTeamSize = 1 + (Array.isArray(members) ? members.length : 0);
+
+      if (totalTeamSize < minSize || totalTeamSize > maxSize) {
+        return res.status(400).json({
+          success: false,
+          message: `Team size must be between ${minSize} and ${maxSize} members (including you)`
+        });
+      }
+
+      // Add to teamRegistrations
+      event.teamRegistrations.push({
+        leader: req.user.id,
+        teamName,
+        members
+      });
+    }
+
+    // Add participant (Leader is the main participant)
     event.participants.push(req.user.id);
     await event.save();
 
@@ -293,7 +348,7 @@ router.put('/:id/approve', authMiddleware, roleMiddleware('college_admin'), asyn
       { approvalStatus },
       { new: true }
     ).populate('organizer', 'name email')
-     .populate('club', 'name');
+      .populate('club', 'name');
 
     if (!event) {
       return res.status(404).json({ success: false, message: 'Event not found' });
@@ -303,8 +358,8 @@ router.put('/:id/approve', authMiddleware, roleMiddleware('college_admin'), asyn
     if (approvalStatus === 'approved') {
       try {
         // Get all approved students
-        const students = await User.find({ 
-          role: 'student', 
+        const students = await User.find({
+          role: 'student',
           approvalStatus: 'approved',
           emailVerified: true
         }).select('email name');
