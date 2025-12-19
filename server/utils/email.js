@@ -17,12 +17,24 @@ const generateOTP = () => {
 };
 
 // Send OTP email
-const sendOTPEmail = async (email, otp, name) => {
+const sendOTPEmail = async (email, otp, name, purpose = 'Email Verification') => {
   try {
+    const subject = purpose === 'Password Reset' 
+      ? 'Password Reset - Campus Companion' 
+      : 'Email Verification - Campus Companion';
+    
+    const title = purpose === 'Password Reset'
+      ? 'Password Reset'
+      : 'Email Verification';
+    
+    const message = purpose === 'Password Reset'
+      ? 'You requested to reset your password. Use the OTP below to proceed:'
+      : 'Thank you for registering with Campus Companion. To complete your registration, please verify your email address using the OTP below:';
+
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'Campus Companion <noreply@campuscompanion.com>',
       to: email,
-      subject: 'Email Verification - Campus Companion',
+      subject: subject,
       html: `
         <!DOCTYPE html>
         <html>
@@ -42,11 +54,11 @@ const sendOTPEmail = async (email, otp, name) => {
           <div class="container">
             <div class="header">
               <h1>🎓 Campus Companion</h1>
-              <p>Email Verification</p>
+              <p>${title}</p>
             </div>
             <div class="content">
               <h2>Hello ${name}!</h2>
-              <p>Thank you for registering with Campus Companion. To complete your registration, please verify your email address using the OTP below:</p>
+              <p>${message}</p>
               
               <div class="otp-box">
                 <p style="margin: 0; font-size: 14px; color: #666;">Your OTP Code</p>
@@ -58,7 +70,7 @@ const sendOTPEmail = async (email, otp, name) => {
                 <strong>⚠️ Security Notice:</strong> Never share this OTP with anyone. Campus Companion staff will never ask for your OTP.
               </div>
 
-              <p>If you didn't request this registration, please ignore this email.</p>
+              <p>If you didn't request this ${purpose.toLowerCase()}, please ignore this email.</p>
               
               <p style="margin-top: 30px;">
                 Best regards,<br>

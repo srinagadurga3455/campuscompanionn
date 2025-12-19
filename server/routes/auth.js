@@ -54,7 +54,7 @@ router.post('/send-otp', [
         otp,
         otpExpiry,
         emailVerified: false,
-        approvalStatus: req.body.role === 'student' ? 'pending' : 'approved'
+        approvalStatus: 'pending' // All users need admin approval
       };
       
       // Only add department if it's provided and not empty
@@ -136,15 +136,13 @@ router.post('/verify-otp', [
     user.emailVerified = true;
     user.otp = undefined; // Clear OTP
     user.otpExpiry = undefined; // Clear OTP expiry
-    user.approvalStatus = (role || user.role) === 'student' ? 'pending' : 'approved';
+    user.approvalStatus = 'pending'; // All users need admin approval
 
     await user.save();
 
     res.status(201).json({
       success: true,
-      message: user.role === 'student' 
-        ? 'Email verified successfully! Registration complete. Awaiting admin approval.' 
-        : 'Email verified successfully! Registration complete.',
+      message: 'Email verified successfully! Registration complete. Awaiting admin approval.',
       user: {
         id: user._id,
         name: user.name,
@@ -199,16 +197,14 @@ router.post('/register', [
       year,
       yearOfAdmission,
       classSection,
-      approvalStatus: role === 'student' ? 'pending' : 'approved'
+      approvalStatus: 'pending' // All users need admin approval
     });
 
     await user.save();
 
     res.status(201).json({
       success: true,
-      message: role === 'student' 
-        ? 'Registration successful. Awaiting admin approval.' 
-        : 'Registration successful.',
+      message: 'Registration successful. Awaiting admin approval.',
       user: {
         id: user._id,
         name: user.name,
@@ -224,10 +220,10 @@ router.post('/register', [
 });
 
 // @route   POST /api/auth/login
-// @desc    Login user
+// @desc    Login user with email or ID (blockchainId/teacherCode)
 // @access  Public
 router.post('/login', [
-  body('email').isEmail().withMessage('Valid email is required'),
+  body('emailOrId').notEmpty().withMessage('Email or ID is required'),
   body('password').notEmpty().withMessage('Password is required')
 ], async (req, res) => {
   try {
@@ -236,10 +232,18 @@ router.post('/login', [
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
-    const { email, password } = req.body;
+    const { emailOrId, password } = req.body;
 
-    // Check if user exists
-    const user = await User.findOne({ email }).populate('department');
+    // Try to find user by email, blockchainId, or teacherCode (case-insensitive for IDs)
+    const emailOrIdUpper = emailOrId.toUpperCase();
+    let user = await User.findOne({
+      $or: [
+        { email: emailOrId.toLowerCase() },
+        { blockchainId: emailOrIdUpper },
+        { teacherCode: emailOrIdUpper }
+      ]
+    }).populate('branch');
+    
     if (!user) {
       return res.status(400).json({ success: false, message: 'Invalid credentials' });
     }
@@ -272,7 +276,8 @@ router.post('/login', [
         role: user.role,
         approvalStatus: user.approvalStatus,
         blockchainId: user.blockchainId,
-        department: user.department
+        teacherCode: user.teacherCode,
+        branch: user.branch
       }
     });
   } catch (error) {
@@ -288,7 +293,7 @@ router.get('/me', authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id)
       .select('-password')
-      .populate('department')
+      .populate('branch')
       .populate('clubsManaged');
 
     res.json({ success: true, user });
@@ -310,6 +315,140 @@ router.get('/status', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Status check error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   POST /api/auth/forgot-password/send-otp
+// @desc    Send OTP for password reset
+// @access  Public
+router.post('/forgot-password/send-otp', [
+  body('email').isEmail().withMessage('Valid email is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const { email } = req.body;
+
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'No account found with this email' });
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Save OTP to user
+    user.otp = otp;
+    user.otpExpiry = otpExpiry;
+    await user.save();
+
+    // Send OTP via email
+    await sendOTPEmail(email, otp, user.name, 'Password Reset');
+
+    res.json({
+      success: true,
+      message: 'OTP sent to your email. Please verify within 10 minutes.'
+    });
+  } catch (error) {
+    console.error('Forgot password send OTP error:', error);
+    res.status(500).json({ success: false, message: 'Failed to send OTP. Please try again.' });
+  }
+});
+
+// @route   POST /api/auth/forgot-password/verify-otp
+// @desc    Verify OTP for password reset
+// @access  Public
+router.post('/forgot-password/verify-otp', [
+  body('email').isEmail().withMessage('Valid email is required'),
+  body('otp').isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const { email, otp } = req.body;
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Check if OTP exists and is valid
+    if (!user.otp || user.otp !== otp) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    }
+
+    // Check if OTP has expired
+    if (new Date() > user.otpExpiry) {
+      return res.status(400).json({ success: false, message: 'OTP has expired. Please request a new one.' });
+    }
+
+    res.json({
+      success: true,
+      message: 'OTP verified successfully. You can now reset your password.'
+    });
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   POST /api/auth/forgot-password/reset
+// @desc    Reset password
+// @access  Public
+router.post('/forgot-password/reset', [
+  body('email').isEmail().withMessage('Valid email is required'),
+  body('otp').isLength({ min: 6, max: 6 }).withMessage('OTP must be 6 digits'),
+  body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const { email, otp, newPassword } = req.body;
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Verify OTP one more time
+    if (!user.otp || user.otp !== otp) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    }
+
+    if (new Date() > user.otpExpiry) {
+      return res.status(400).json({ success: false, message: 'OTP has expired' });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    
+    // Clear OTP fields
+    user.otp = undefined;
+    user.otpExpiry = undefined;
+    
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully. You can now login with your new password.'
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });

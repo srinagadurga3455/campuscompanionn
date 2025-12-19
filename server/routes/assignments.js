@@ -1,36 +1,114 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const Assignment = require('../models/Assignment');
+const Enrollment = require('../models/Enrollment');
+const Branch = require('../models/Branch');
 const authMiddleware = require('../middleware/auth');
 const roleMiddleware = require('../middleware/roleCheck');
+
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, '../uploads/assignments');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'assignment-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  // Accept PDFs only
+  if (file.mimetype === 'application/pdf') {
+    cb(null, true);
+  } else {
+    cb(new Error('Only PDF files are allowed!'), false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
 
 // @route   POST /api/assignments
 // @desc    Create new assignment
 // @access  Private (faculty)
-router.post('/', authMiddleware, roleMiddleware('faculty'), async (req, res) => {
+router.post('/', authMiddleware, roleMiddleware('faculty'), upload.single('pdfFile'), async (req, res) => {
   try {
     const {
       title,
       description,
       subject,
-      department,
       year,
-      section,
-      dueDate,
-      maxMarks,
-      attachments
+      totalMarks,
+      teacherCode,
+      department,
+      section
     } = req.body;
+
+    console.log('📝 Creating assignment with data:', {
+      title,
+      subject,
+      year,
+      department,
+      section,
+      totalMarks
+    });
+
+    // Validate that teacher has this code
+    if (!req.user.teacherCode) {
+      return res.status(400).json({ success: false, message: 'You need a teacher code first. Please contact admin.' });
+    }
+
+    const codeToUse = teacherCode || req.user.teacherCode;
+
+    // Find branch by code (case-insensitive)
+    let branchId;
+    if (department) {
+      console.log('🔍 Looking up branch with code:', department);
+      const branch = await Branch.findOne({ code: department.toUpperCase() });
+      if (!branch) {
+        console.log('❌ Branch not found:', department);
+        return res.status(400).json({ success: false, message: `Invalid branch code: ${department}` });
+      }
+      console.log('✅ Branch found:', branch.name);
+      branchId = branch._id;
+    } else {
+      branchId = req.user.branch;
+    }
+
+    const attachments = [];
+    if (req.file) {
+      attachments.push({
+        filename: req.file.originalname,
+        url: `/uploads/assignments/${req.file.filename}`
+      });
+    }
 
     const assignment = new Assignment({
       title,
       description,
       subject,
       faculty: req.user.id,
-      department,
-      year,
-      section,
-      dueDate,
-      maxMarks,
+      teacherCode: codeToUse,
+      branch: branchId,
+      section: section || '',
+      year: Number(year),
+      dueDate: req.body.dueDate,
+      maxMarks: Number(totalMarks),
       attachments
     });
 
@@ -43,41 +121,60 @@ router.post('/', authMiddleware, roleMiddleware('faculty'), async (req, res) => 
     });
   } catch (error) {
     console.error('Create assignment error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      stack: error.stack
+    });
+    res.status(500).json({ success: false, message: error.message || 'Server error' });
   }
 });
 
 // @route   GET /api/assignments
-// @desc    Get assignments (filtered by user role)
+// @desc    Get assignments (filtered by enrollment)
 // @access  Private
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    let filter = {};
+    let assignments = [];
 
     if (req.user.role === 'student') {
-      // Students see assignments for their department and year
-      filter = {
-        department: req.user.department,
-        year: req.user.year
-      };
-      if (req.user.classSection) {
-        filter.$or = [
-          { section: req.user.classSection },
-          { section: null }
-        ];
-      }
-    } else if (req.user.role === 'faculty') {
-      // Faculty see assignments from their department only
-      filter = {
-        faculty: req.user.id,
-        department: req.user.department
-      };
-    }
+      // Get all enrollments for this student
+      const enrollments = await Enrollment.find({
+        student: req.user.id,
+        status: 'active'
+      });
 
-    const assignments = await Assignment.find(filter)
-      .populate('faculty', 'name email')
-      .populate('department', 'name')
-      .sort({ dueDate: -1 });
+      // Get teacher codes student is enrolled in
+      const teacherCodes = enrollments.map(e => e.teacherCode);
+
+      // Get assignments from enrolled teachers AND matching student's branch, year, and section
+      const studentUser = await req.user.populate('branch');
+      
+      assignments = await Assignment.find({
+        teacherCode: { $in: teacherCodes },
+        branch: req.user.branch,
+        year: req.user.year,
+        $or: [
+          { section: req.user.classSection },
+          { section: { $exists: false } },
+          { section: '' }
+        ]
+      })
+        .populate('faculty', 'name email teacherCode')
+        .populate('branch', 'name code')
+        .populate('submissions.student', 'name')
+        .sort({ dueDate: -1 });
+
+    } else if (req.user.role === 'faculty') {
+      // Faculty see their own assignments
+      assignments = await Assignment.find({
+        faculty: req.user.id
+      })
+        .populate('faculty', 'name email')
+        .populate('branch', 'name code')
+        .populate('submissions.student', 'name email blockchainId')
+        .sort({ dueDate: -1 });
+    }
 
     res.json({ success: true, assignments });
   } catch (error) {

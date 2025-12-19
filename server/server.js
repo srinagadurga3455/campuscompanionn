@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 
 // Load environment variables
 dotenv.config();
@@ -13,9 +14,12 @@ const eventRoutes = require('./routes/events');
 const assignmentRoutes = require('./routes/assignments');
 const clubRoutes = require('./routes/clubs');
 const departmentRoutes = require('./routes/departments');
+const branchRoutes = require('./routes/branches');
 const certificateRoutes = require('./routes/certificates');
 const badgeRoutes = require('./routes/badges');
 const blockchainRoutes = require('./routes/blockchain');
+const enrollmentRoutes = require('./routes/enrollments');
+const attendanceRoutes = require('./routes/attendance');
 
 const app = express();
 
@@ -27,13 +31,16 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log('✅ MongoDB Connected'))
-.catch(err => console.error('❌ MongoDB Connection Error:', err));
+  .then(() => console.log('✅ MongoDB Connected'))
+  .catch(err => console.error('❌ MongoDB Connection Error:', err));
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -42,9 +49,12 @@ app.use('/api/events', eventRoutes);
 app.use('/api/assignments', assignmentRoutes);
 app.use('/api/clubs', clubRoutes);
 app.use('/api/departments', departmentRoutes);
+app.use('/api/branches', branchRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/badges', badgeRoutes);
 app.use('/api/blockchain', blockchainRoutes);
+app.use('/api/enrollments', enrollmentRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -54,8 +64,8 @@ app.get('/api/health', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ 
-    success: false, 
+  res.status(500).json({
+    success: false,
     message: 'Internal server error',
     error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });

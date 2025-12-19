@@ -32,6 +32,11 @@ const userSchema = new mongoose.Schema({
     unique: true,
     sparse: true // Allows multiple null values
   },
+  teacherCode: {
+    type: String,
+    unique: true,
+    sparse: true // Only for faculty, unique per teacher
+  },
   phone: {
     type: String,
     required: true
@@ -46,9 +51,9 @@ const userSchema = new mongoose.Schema({
   otpExpiry: {
     type: Date
   },
-  department: {
+  branch: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Department',
+    ref: 'Branch',
     required: false
   },
   year: {

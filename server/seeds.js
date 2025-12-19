@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const User = require('./models/User');
 const Department = require('./models/Department');
+const Branch = require('./models/Branch');
 const Club = require('./models/Club');
 
 const connectDB = async () => {
@@ -23,20 +24,101 @@ const seedDatabase = async () => {
     console.log('🗑️  Clearing existing users...');
     await User.deleteMany({});
     await Department.deleteMany({});
+    await Branch.deleteMany({});
     await Club.deleteMany({});
 
     // Create departments
     console.log('📚 Creating departments...');
-    const csDepartment = await Department.create({
-      name: 'Computer Science',
-      code: 'CS',
+    const engineeringDept = await Department.create({
+      name: 'Engineering',
+      code: 'ENG',
+      description: 'Engineering Department'
+    });
+
+    // Create branches under Engineering
+    console.log('🌿 Creating branches...');
+    const cseBranch = await Branch.create({
+      name: 'Computer Science and Engineering',
+      code: 'CSE',
+      department: engineeringDept._id,
       description: 'Computer Science and Engineering'
     });
 
-    const eceDepartment = await Department.create({
-      name: 'Electronics',
-      code: 'EC',
-      description: 'Electronics and Communication Engineering'
+    const aimlBranch = await Branch.create({
+      name: 'Artificial Intelligence and Machine Learning',
+      code: 'AIML',
+      department: engineeringDept._id,
+      description: 'AI and ML specialization'
+    });
+
+    const cicBranch = await Branch.create({
+      name: 'Computer and Information Communication',
+      code: 'CIC',
+      department: engineeringDept._id,
+      description: 'Computer and Information Communication'
+    });
+
+    const aidsBranch = await Branch.create({
+      name: 'Artificial Intelligence and Data Science',
+      code: 'AIDS',
+      department: engineeringDept._id,
+      description: 'AI and Data Science'
+    });
+
+    const itBranch = await Branch.create({
+      name: 'Information Technology',
+      code: 'IT',
+      department: engineeringDept._id,
+      description: 'Information Technology'
+    });
+
+    const csbsBranch = await Branch.create({
+      name: 'Computer Science and Business Systems',
+      code: 'CSBS',
+      department: engineeringDept._id,
+      description: 'CS and Business Systems'
+    });
+
+    const eceBranch = await Branch.create({
+      name: 'Electronics and Communication Engineering',
+      code: 'ECE',
+      department: engineeringDept._id,
+      description: 'Electronics and Communication'
+    });
+
+    const eeeBranch = await Branch.create({
+      name: 'Electrical and Electronics Engineering',
+      code: 'EEE',
+      department: engineeringDept._id,
+      description: 'Electrical and Electronics'
+    });
+
+    const mechBranch = await Branch.create({
+      name: 'Mechanical Engineering',
+      code: 'MECH',
+      department: engineeringDept._id,
+      description: 'Mechanical Engineering'
+    });
+
+    const civilBranch = await Branch.create({
+      name: 'Civil Engineering',
+      code: 'CIVIL',
+      department: engineeringDept._id,
+      description: 'Civil Engineering'
+    });
+
+    const csdBranch = await Branch.create({
+      name: 'Computer Science and Design',
+      code: 'CSD',
+      department: engineeringDept._id,
+      description: 'CS and Design'
+    });
+
+    const csitBranch = await Branch.create({
+      name: 'Computer Science and Information Technology',
+      code: 'CSIT',
+      department: engineeringDept._id,
+      description: 'CS and IT'
     });
 
     // Create clubs
@@ -47,14 +129,14 @@ const seedDatabase = async () => {
       name: 'Tech Club',
       description: 'Technology and Innovation Club',
       category: 'technical',
-      admin: csDepartment._id  // Temporary - will be updated
+      admin: engineeringDept._id  // Temporary - will be updated
     });
 
     const culturalClub = await Club.create({
       name: 'Cultural Club',
       description: 'Cultural Activities and Events',
       category: 'cultural',
-      admin: csDepartment._id  // Temporary - will be updated
+      admin: engineeringDept._id  // Temporary - will be updated
     });
 
     // Hash password (password123 for all users)
@@ -83,9 +165,10 @@ const seedDatabase = async () => {
       password: hashedPassword,
       phone: '+919876543211',
       role: 'faculty',
-      department: csDepartment._id,
+      branch: cseBranch._id,
       emailVerified: true,
-      approvalStatus: 'approved'
+      approvalStatus: 'approved',
+      teacherCode: 'TC24CSE001'
     });
     console.log('✅ Faculty created - Email: faculty@campus.com, Password: password123');
 
@@ -96,7 +179,7 @@ const seedDatabase = async () => {
       password: hashedPassword,
       phone: '+919876543212',
       role: 'club_admin',
-      department: csDepartment._id,
+      branch: cseBranch._id,
       clubsManaged: [techClub._id],
       emailVerified: true,
       approvalStatus: 'approved'
@@ -117,14 +200,13 @@ const seedDatabase = async () => {
       email: 'student@campus.com',
       password: hashedPassword,
       phone: '+919876543213',
-      role: 'student',
-      department: csDepartment._id,
+      branch: cseBranch._id,
       year: 2,
       yearOfAdmission: 2023,
       classSection: 'A',
       emailVerified: true,
       approvalStatus: 'approved',
-      blockchainId: '2301CS0001'
+      blockchainId: '2301CSE0001'
     });
     console.log('✅ Student (Approved) created - Email: student@campus.com, Password: password123');
 
@@ -135,7 +217,7 @@ const seedDatabase = async () => {
       password: hashedPassword,
       phone: '+919876543214',
       role: 'student',
-      department: eceDepartment._id,
+      branch: eceBranch._id,
       year: 1,
       yearOfAdmission: 2024,
       classSection: 'B',
@@ -157,6 +239,8 @@ const seedDatabase = async () => {
     console.log('━'.repeat(60));
     console.log('\n💡 All users are email verified and ready to login!');
     console.log('💡 Pending student needs admin approval to access dashboard.');
+    console.log('\n📚 Departments: Engineering (ENG)');
+    console.log('🌿 Branches: CSE, AIML, CIC, AIDS, IT, CSBS, ECE, EEE, MECH, CIVIL, CSD, CSIT
     console.log('\n📚 Departments created: Computer Science (CS), Electronics (EC)');
     console.log('🎭 Clubs created: Tech Club, Cultural Club\n');
 

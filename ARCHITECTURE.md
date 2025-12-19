@@ -65,13 +65,13 @@
 Student                  Backend                Admin              Blockchain
    │                       │                      │                    │
    ├──1. Register─────────→│                      │                    │
-   │   (POST /auth/       │                      │                    │
+   │   (POST /auth/        │                      │                    │
    │    register)          │                      │                    │
    │                       │                      │                    │
    │                       ├──2. Save to DB──────→│                    │
    │                       │   (status: pending)  │                    │
    │                       │                      │                    │
-   │←──3. Awaiting────────┤                      │                    │
+   │←──3. Awaiting────────┤                       │                    │
    │    approval           │                      │                    │
    │                       │                      │                    │
    │                       │   4. View pending ──→│                    │
@@ -89,7 +89,7 @@ Student                  Backend                Admin              Blockchain
    │                       ├──8. Update DB────────┤                    │
    │                       │   (blockchainId)     │                    │
    │                       │                      │                    │
-   │                       ├──9. WhatsApp────────→│                    │
+   │                       ├──9. Email────────→   │                    │
    │←─────────────────────┤    Notification       │                    │
    │  "Approved! ID:       │                      │                    │
    │   2301CS0001"         │                      │                    │

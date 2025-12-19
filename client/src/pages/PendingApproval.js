@@ -33,7 +33,14 @@ const PendingApproval = () => {
       
       if (response.data.approvalStatus === 'approved') {
         setTimeout(() => {
-          navigate('/dashboard/student');
+          // Navigate based on user role
+          const dashboardRoutes = {
+            student: '/dashboard/student',
+            faculty: '/dashboard/faculty',
+            club_admin: '/dashboard/club-admin',
+            college_admin: '/dashboard/college-admin',
+          };
+          navigate(dashboardRoutes[user?.role] || '/dashboard/student');
         }, 2000);
       }
     } catch (error) {
@@ -74,8 +81,19 @@ const PendingApproval = () => {
                 Approval Pending
               </Typography>
               <Typography variant="body1" color="text.secondary" paragraph>
-                Your registration is awaiting admin approval. You will receive a WhatsApp notification once approved.
+                Your {user?.role === 'faculty' ? 'faculty' : user?.role === 'club_admin' ? 'club admin' : ''} registration is awaiting admin approval. 
+                You will receive a WhatsApp notification once approved.
               </Typography>
+              {user?.role === 'student' && (
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  Once approved, you will receive your unique Blockchain Student ID.
+                </Typography>
+              )}
+              {user?.role === 'faculty' && (
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  Once approved, you will receive your unique Teacher Code for class management.
+                </Typography>
+              )}
               <Typography variant="body2" color="text.secondary" paragraph>
                 This page will automatically update once your account is approved.
               </Typography>
@@ -93,8 +111,13 @@ const PendingApproval = () => {
                 Your account has been approved. Redirecting to dashboard...
               </Typography>
               {user?.blockchainId && (
-                <Typography variant="body2" sx={{ fontFamily: 'monospace', mt: 2 }}>
+                <Typography variant="body2" sx={{ fontFamily: 'monospace', mt: 2, fontWeight: 'bold' }}>
                   Your Student ID: {user.blockchainId}
+                </Typography>
+              )}
+              {user?.teacherCode && (
+                <Typography variant="body2" sx={{ fontFamily: 'monospace', mt: 2, fontWeight: 'bold' }}>
+                  Your Teacher Code: {user.teacherCode}
                 </Typography>
               )}
             </>

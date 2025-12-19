@@ -19,9 +19,13 @@ const assignmentSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  department: {
+  teacherCode: {
+    type: String,
+    required: true
+  },
+  branch: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Department',
+    ref: 'Branch',
     required: true
   },
   year: {

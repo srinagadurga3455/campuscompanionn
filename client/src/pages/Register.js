@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -38,7 +38,7 @@ const Register = () => {
     year: '',
     yearOfAdmission: '',
     classSection: '',
-    department: '',
+    branch: '',
   });
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
@@ -46,6 +46,21 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const branches = [
+    { code: 'CSE', name: 'Computer Science and Engineering' },
+    { code: 'AIML', name: 'Artificial Intelligence and Machine Learning' },
+    { code: 'CIC', name: 'Computer and Information Communication' },
+    { code: 'AIDS', name: 'Artificial Intelligence and Data Science' },
+    { code: 'IT', name: 'Information Technology' },
+    { code: 'CSBS', name: 'Computer Science and Business Systems' },
+    { code: 'ECE', name: 'Electronics and Communication Engineering' },
+    { code: 'EEE', name: 'Electrical and Electronics Engineering' },
+    { code: 'MECH', name: 'Mechanical Engineering' },
+    { code: 'CIVIL', name: 'Civil Engineering' },
+    { code: 'CSD', name: 'Computer Science and Design' },
+    { code: 'CSIT', name: 'Computer Science and Information Technology' }
+  ];
 
   const steps = ['Enter Details', 'Verify Email'];
 
@@ -257,6 +272,26 @@ const Register = () => {
                 <MenuItem value="faculty">Faculty</MenuItem>
                 <MenuItem value="club_admin">Club Admin</MenuItem>
               </TextField>
+
+              {(formData.role === 'student' || formData.role === 'faculty') && (
+                <TextField
+                  fullWidth
+                  select
+                  label="Branch"
+                  name="branch"
+                  value={formData.branch}
+                  onChange={handleChange}
+                  margin="normal"
+                  required
+                  helperText="Select your branch"
+                >
+                  {branches.map((branch) => (
+                    <MenuItem key={branch._id} value={branch._id}>
+                      {branch.name} ({branch.code})
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
 
               {formData.role === 'student' && (
                 <>
