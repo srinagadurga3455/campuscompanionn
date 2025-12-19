@@ -17,6 +17,7 @@ import ClubAdminDashboard from './pages/dashboards/ClubAdminDashboard';
 import CollegeAdminDashboard from './pages/dashboards/CollegeAdminDashboard';
 import PendingApproval from './pages/PendingApproval';
 import Events from './pages/Events';
+import EventRegistration from './pages/EventRegistration';
 import Assignments from './pages/Assignments';
 import Certificates from './pages/Certificates';
 import VerifyCertificate from './pages/VerifyCertificate';
@@ -366,6 +367,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <Events />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/events/:eventId/register"
+              element={
+                <PrivateRoute role="student">
+                  <EventRegistration />
                 </PrivateRoute>
               }
             />

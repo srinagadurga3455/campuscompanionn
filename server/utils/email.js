@@ -253,9 +253,121 @@ const sendRejectionEmail = async (email, name, reason = '') => {
   }
 };
 
+// Send event notification email
+const sendEventNotificationEmail = async (email, name, eventDetails) => {
+  try {
+    const eventDate = new Date(eventDetails.startDate).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || 'Campus Companion <noreply@campuscompanion.com>',
+      to: email,
+      subject: `🎉 New Event: ${eventDetails.title} - Campus Companion`,
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .event-box { background: white; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+            .event-detail { margin: 10px 0; padding: 8px; background: #f8f9fa; border-radius: 4px; }
+            .event-detail strong { color: #667eea; }
+            .cta-button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 25px; margin: 20px 0; font-weight: bold; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+            .badge { display: inline-block; background: #667eea; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; text-transform: uppercase; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎉 New Event Announcement</h1>
+              <p>Campus Companion</p>
+            </div>
+            <div class="content">
+              <h2>Hello ${name}!</h2>
+              
+              <p>A new event has been approved and is now available for registration:</p>
+              
+              <div class="event-box">
+                <h3 style="margin-top: 0; color: #667eea;">${eventDetails.title}</h3>
+                <span class="badge">${eventDetails.eventType}</span>
+                
+                <div class="event-detail">
+                  <strong>📅 Date & Time:</strong> ${eventDate}
+                </div>
+                
+                <div class="event-detail">
+                  <strong>📍 Venue:</strong> ${eventDetails.venue}
+                </div>
+                
+                ${eventDetails.club ? `
+                  <div class="event-detail">
+                    <strong>🎯 Organized by:</strong> ${eventDetails.club.name}
+                  </div>
+                ` : ''}
+                
+                ${eventDetails.maxParticipants ? `
+                  <div class="event-detail">
+                    <strong>👥 Max Participants:</strong> ${eventDetails.maxParticipants}
+                  </div>
+                ` : ''}
+                
+                ${eventDetails.registrationDeadline ? `
+                  <div class="event-detail">
+                    <strong>⏰ Registration Deadline:</strong> ${new Date(eventDetails.registrationDeadline).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </div>
+                ` : ''}
+              </div>
+
+              <p style="text-align: center;">
+                <a href="${process.env.APP_URL || 'http://localhost:3000'}/events" class="cta-button">
+                  View Event & Register Now
+                </a>
+              </p>
+
+              <p><strong>Don't miss out!</strong> Log in to your Campus Companion account to register and get more details about this event.</p>
+              
+              <p style="margin-top: 30px;">
+                Best regards,<br>
+                <strong>Campus Companion Team</strong>
+              </p>
+            </div>
+            <div class="footer">
+              <p>&copy; 2024 Campus Companion. All rights reserved.</p>
+              <p>This is an automated notification. To unsubscribe from event notifications, update your preferences in the app.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Event notification email sent to:', email);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Error sending event notification email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 module.exports = {
   generateOTP,
   sendOTPEmail,
   sendApprovalEmail,
-  sendRejectionEmail
+  sendRejectionEmail,
+  sendEventNotificationEmail
 };

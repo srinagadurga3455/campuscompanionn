@@ -4,6 +4,7 @@ const Event = require('../models/Event');
 const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
 const roleMiddleware = require('../middleware/roleCheck');
+const { sendEventNotificationEmail } = require('../utils/email');
 
 // @route   POST /api/events
 // @desc    Create new event
@@ -36,14 +37,21 @@ router.post('/', authMiddleware, roleMiddleware('club_admin', 'college_admin'), 
       venue,
       maxParticipants,
       registrationDeadline,
-      images
+      images,
+      // College admins can auto-approve their events, club admins need approval
+      approvalStatus: req.user.role === 'college_admin' ? 'approved' : 'pending'
     });
 
     await event.save();
 
+    await event.populate('organizer', 'name email');
+    await event.populate('club', 'name');
+
     res.status(201).json({
       success: true,
-      message: 'Event created successfully',
+      message: req.user.role === 'college_admin' 
+        ? 'Event created and approved successfully'
+        : 'Event created successfully. Waiting for admin approval.',
       event
     });
   } catch (error) {
@@ -64,6 +72,16 @@ router.get('/', authMiddleware, async (req, res) => {
     if (status) filter.status = status;
     if (club) filter.club = club;
     if (department) filter.department = department;
+    
+    // Filter by approval status based on user role
+    if (req.user.role === 'student' || req.user.role === 'faculty') {
+      // Students and faculty only see approved events
+      filter.approvalStatus = 'approved';
+    } else if (req.user.role === 'club_admin') {
+      // Club admins see their own events (all statuses)
+      filter.organizer = req.user.id;
+    }
+    // College admins see all events (no approval filter)
     
     // Filter by authenticated user's department if they're student or faculty
     if (req.user && (req.user.role === 'student' || req.user.role === 'faculty')) {
@@ -255,6 +273,82 @@ router.post('/:id/unregister', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Unregister from event error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   PUT /api/events/:id/approve
+// @desc    Approve or reject event
+// @access  Private (college_admin)
+router.put('/:id/approve', authMiddleware, roleMiddleware('college_admin'), async (req, res) => {
+  try {
+    const { approvalStatus } = req.body;
+
+    if (!['approved', 'rejected'].includes(approvalStatus)) {
+      return res.status(400).json({ success: false, message: 'Invalid approval status' });
+    }
+
+    const event = await Event.findByIdAndUpdate(
+      req.params.id,
+      { approvalStatus },
+      { new: true }
+    ).populate('organizer', 'name email')
+     .populate('club', 'name');
+
+    if (!event) {
+      return res.status(404).json({ success: false, message: 'Event not found' });
+    }
+
+    // If event is approved, send notification to all students
+    if (approvalStatus === 'approved') {
+      try {
+        // Get all approved students
+        const students = await User.find({ 
+          role: 'student', 
+          approvalStatus: 'approved',
+          emailVerified: true
+        }).select('email name');
+
+        console.log(`📧 Sending event notification emails to ${students.length} students`);
+
+        // Send notifications to all students (in background, don't wait)
+        const emailPromises = students.map(student => {
+          if (student.email) {
+            return sendEventNotificationEmail(student.email, student.name, {
+              title: event.title,
+              eventType: event.eventType,
+              startDate: event.startDate,
+              venue: event.venue,
+              club: event.club,
+              maxParticipants: event.maxParticipants,
+              registrationDeadline: event.registrationDeadline
+            }).catch(err => {
+              console.error(`Failed to send notification to ${student.name}:`, err);
+              return { success: false, email: student.email };
+            });
+          }
+          return Promise.resolve({ success: false, email: student.email });
+        });
+
+        // Wait for all emails to be sent (or attempted)
+        Promise.all(emailPromises).then(results => {
+          const successCount = results.filter(r => r.success).length;
+          console.log(`✅ Event notification emails sent: ${successCount}/${students.length} successful`);
+        });
+
+      } catch (notificationError) {
+        // Log error but don't fail the approval
+        console.error('Error sending notifications:', notificationError);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Event ${approvalStatus} successfully${approvalStatus === 'approved' ? ' and notifications sent to students' : ''}`,
+      event
+    });
+  } catch (error) {
+    console.error('Approve event error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });

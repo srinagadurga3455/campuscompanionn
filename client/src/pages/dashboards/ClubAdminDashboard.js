@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Navbar from '../../components/Navbar';
 import {
@@ -18,6 +19,7 @@ import api from '../../utils/api';
 
 const ClubAdminDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalEvents: 0,
     members: 0,
@@ -110,16 +112,32 @@ const ClubAdminDashboard = () => {
                 Quick Actions
               </Typography>
               <Box display="flex" flexDirection="column" gap={2}>
-                <Button variant="contained" fullWidth>
+                <Button 
+                  variant="contained" 
+                  fullWidth
+                  onClick={() => navigate('/events')}
+                >
                   Create New Event
                 </Button>
-                <Button variant="outlined" fullWidth>
+                <Button 
+                  variant="outlined" 
+                  fullWidth
+                  onClick={() => navigate('/certificates')}
+                >
                   Issue Certificates
                 </Button>
-                <Button variant="outlined" fullWidth>
+                <Button 
+                  variant="outlined" 
+                  fullWidth
+                  onClick={() => navigate('/events')}
+                >
                   Track Participation
                 </Button>
-                <Button variant="outlined" fullWidth>
+                <Button 
+                  variant="outlined" 
+                  fullWidth
+                  onClick={() => navigate('/students')}
+                >
                   Manage Members
                 </Button>
               </Box>

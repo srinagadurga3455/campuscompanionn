@@ -50,6 +50,11 @@ const eventSchema = new mongoose.Schema({
   registrationDeadline: {
     type: Date
   },
+  approvalStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
   status: {
     type: String,
     enum: ['upcoming', 'ongoing', 'completed', 'cancelled'],
