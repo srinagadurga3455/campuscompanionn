@@ -1,15 +1,32 @@
 const nodemailer = require('nodemailer');
 
-// Create reusable transporter
+// Create reusable transporter with better error handling and timeouts
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port: process.env.EMAIL_PORT || 587,
+  port: parseInt(process.env.EMAIL_PORT || '587'),
   secure: false, // true for 465, false for other ports
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD
+  },
+  tls: {
+    rejectUnauthorized: false
+  },
+  connectionTimeout: 10000, // 10 seconds
+  greetingTimeout: 10000,
+  socketTimeout: 10000
+});
+
+// Verify connection configuration
+transporter.verify(function (error, success) {
+  if (error) {
+    console.error('❌ Email Server Connection Error:', error);
+  } else {
+    console.log('✅ Email Server is ready to take our messages');
   }
 });
+
+// Generate 6-digit OTP
 
 // Generate 6-digit OTP
 const generateOTP = () => {
@@ -19,14 +36,14 @@ const generateOTP = () => {
 // Send OTP email
 const sendOTPEmail = async (email, otp, name, purpose = 'Email Verification') => {
   try {
-    const subject = purpose === 'Password Reset' 
-      ? 'Password Reset - Campus Companion' 
+    const subject = purpose === 'Password Reset'
+      ? 'Password Reset - Campus Companion'
       : 'Email Verification - Campus Companion';
-    
+
     const title = purpose === 'Password Reset'
       ? 'Password Reset'
       : 'Email Verification';
-    
+
     const message = purpose === 'Password Reset'
       ? 'You requested to reset your password. Use the OTP below to proceed:'
       : 'Thank you for registering with Campus Companion. To complete your registration, please verify your email address using the OTP below:';
@@ -323,11 +340,11 @@ const sendEventNotificationEmail = async (email, name, eventDetails) => {
                 ${eventDetails.registrationDeadline ? `
                   <div class="event-detail">
                     <strong>⏰ Registration Deadline:</strong> ${new Date(eventDetails.registrationDeadline).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })}
                   </div>
                 ` : ''}
               </div>
