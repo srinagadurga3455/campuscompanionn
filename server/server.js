@@ -25,19 +25,24 @@ const collegeAdminRoutes = require('./routes/collegeAdmin');
 const app = express();
 
 // Middleware
+// Enable CORS for all requests
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    // Allow any origin
-    return callback(null, true);
-  },
+  origin: true, // Reflects the request origin
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  allowedHeaders: 'Content-Type, Authorization, X-Requested-With'
 }));
+
+// Explicitly handle options for preflight check
+app.options('*', cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Root route for connection verification
+app.get('/', (req, res) => {
+  res.send('Campus Companion API is Running');
+});
 
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
