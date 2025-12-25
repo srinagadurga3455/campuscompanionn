@@ -26,21 +26,25 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SchoolIcon from '@mui/icons-material/School';
 import MailIcon from '@mui/icons-material/Mail';
 import PaidIcon from '@mui/icons-material/Paid';
-import api from '../../utils/api';
+import api, { SERVER_URL } from '../../utils/api';
 
 const StudentDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [showMailbox, setShowMailbox] = useState(false);
+
   useEffect(() => {
     if (location.state?.scrollToMailbox) {
-      const mailboxElement = document.getElementById('mailbox');
-      if (mailboxElement) {
-        mailboxElement.scrollIntoView({ behavior: 'smooth' });
-        // Clear state to prevent scrolling on subsequent renders
-        navigate(location.pathname, { replace: true, state: {} });
-      }
+      setShowMailbox(true);
+      setTimeout(() => {
+        const mailboxElement = document.getElementById('mailbox');
+        if (mailboxElement) {
+          mailboxElement.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+      navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location.state, navigate]);
 
@@ -127,7 +131,7 @@ const StudentDashboard = () => {
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 8 }}>
       <Navbar title="Student Center" />
 
-      <Container maxWidth="lg" sx={{ mt: { xs: 10, md: 12 }, pt: 2 }}>
+      <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 4 }, pt: 2 }}>
         {/* Modern Header Section */}
         <Paper
           elevation={0}
@@ -185,8 +189,8 @@ const StudentDashboard = () => {
           </Grid>
         </Paper>
 
-        {/* Mailbox Section */}
-        {unclaimedCertificates.length > 0 && (
+        {/* Mailbox Section - Only visible when explicitly opened */}
+        {showMailbox && (
           <Paper
             id="mailbox"
             elevation={0}
@@ -195,47 +199,69 @@ const StudentDashboard = () => {
               mb: 6,
               borderRadius: '24px',
               border: '1px solid',
-              borderColor: 'primary.main',
-              bgcolor: 'rgba(79,70,229,0.04)',
+              borderColor: unclaimedCertificates.length > 0 ? 'primary.main' : 'divider',
+              bgcolor: unclaimedCertificates.length > 0 ? 'rgba(79,70,229,0.04)' : 'background.paper',
               position: 'relative',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              animation: 'fadeIn 0.5s ease-out',
+              '@keyframes fadeIn': {
+                '0%': { opacity: 0, transform: 'translateY(20px)' },
+                '100%': { opacity: 1, transform: 'translateY(0)' }
+              }
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-              <Box sx={{ p: 1.5, borderRadius: '12px', bgcolor: 'primary.main', color: 'white', mr: 2 }}>
-                <MailIcon />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ p: 1.5, borderRadius: '12px', bgcolor: unclaimedCertificates.length > 0 ? 'primary.main' : 'action.disabledBackground', color: unclaimedCertificates.length > 0 ? 'white' : 'text.disabled', mr: 2 }}>
+                  <MailIcon />
+                </Box>
+                <Box>
+                  <Typography variant="h5" sx={{ fontWeight: 800, color: unclaimedCertificates.length > 0 ? 'text.primary' : 'text.secondary' }}>Certificate Mailbox</Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    {unclaimedCertificates.length > 0
+                      ? `You have ${unclaimedCertificates.length} unclaimed certificates waiting for you!`
+                      : "No new certificates at the moment."}
+                  </Typography>
+                </Box>
               </Box>
-              <Box>
-                <Typography variant="h5" sx={{ fontWeight: 800 }}>Certificate Mailbox</Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  You have {unclaimedCertificates.length} unclaimed certificates waiting for you!
-                </Typography>
-              </Box>
+              <Button
+                onClick={() => setShowMailbox(false)}
+                sx={{ minWidth: 'auto', p: 1, borderRadius: '50%' }}
+                color="inherit"
+              >
+                ✕
+              </Button>
             </Box>
 
-            <Grid container spacing={3}>
-              {unclaimedCertificates.map((cert) => (
-                <Grid item xs={12} md={6} key={cert._id}>
-                  <Card sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}>
-                    <CardContent sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 700 }}>{cert.title}</Typography>
-                        <Typography variant="caption" sx={{ color: 'text.muted' }}>
-                          Issued by: {cert.issuer?.name || 'Admin'}
-                        </Typography>
-                      </Box>
-                      <Button
-                        variant="contained"
-                        onClick={() => handleClaimCertificate(cert._id)}
-                        sx={{ borderRadius: '8px', fontWeight: 700, px: 3 }}
-                      >
-                        Claim
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
+            {unclaimedCertificates.length > 0 ? (
+              <Grid container spacing={3}>
+                {unclaimedCertificates.map((cert) => (
+                  <Grid item xs={12} md={6} key={cert._id}>
+                    <Card sx={{ borderRadius: '16px', border: '1px solid', borderColor: 'divider' }}>
+                      <CardContent sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Box>
+                          <Typography variant="h6" sx={{ fontWeight: 700 }}>{cert.title}</Typography>
+                          <Typography variant="caption" sx={{ color: 'text.muted' }}>
+                            Issued by: {cert.issuer?.name || 'Admin'}
+                          </Typography>
+                        </Box>
+                        <Button
+                          variant="contained"
+                          onClick={() => handleClaimCertificate(cert._id)}
+                          sx={{ borderRadius: '8px', fontWeight: 700, px: 3 }}
+                        >
+                          Claim
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            ) : (
+              <Box sx={{ py: 4, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '16px' }}>
+                <Typography color="text.secondary">All caught up! No unclaimed certificates.</Typography>
+              </Box>
+            )}
           </Paper>
         )}
 
@@ -455,7 +481,7 @@ const StudentDashboard = () => {
                             variant="contained"
                             size="small"
                             fullWidth
-                            onClick={() => window.open(`http://localhost:5000${cert.certificateFile}`, '_blank')}
+                            onClick={() => window.open(`${SERVER_URL}${cert.certificateFile}`, '_blank')}
                             sx={{ fontWeight: 700, borderRadius: '8px' }}
                           >
                             View
@@ -467,7 +493,7 @@ const StudentDashboard = () => {
                             size="small"
                             fullWidth
                             component="a"
-                            href={`http://localhost:5000${cert.certificateFile}`}
+                            href={`${SERVER_URL}${cert.certificateFile}`}
                             download
                             sx={{ fontWeight: 700, borderRadius: '8px', bgcolor: 'success.main', '&:hover': { bgcolor: 'success.dark' } }}
                           >

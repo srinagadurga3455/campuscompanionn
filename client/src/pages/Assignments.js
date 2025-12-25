@@ -18,7 +18,7 @@ import {
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import DownloadIcon from '@mui/icons-material/Download';
-import api from '../utils/api';
+import api, { SERVER_URL } from '../utils/api';
 
 const Assignments = () => {
   const { user } = useAuth();
@@ -43,7 +43,7 @@ const Assignments = () => {
 
   const handleDownload = (url, filename) => {
     const link = document.createElement('a');
-    link.href = `http://localhost:5000${url}`;
+    link.href = `${SERVER_URL}${url}`;
     link.download = filename;
     link.target = '_blank';
     document.body.appendChild(link);

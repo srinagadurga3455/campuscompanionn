@@ -25,8 +25,7 @@ import VerifiedIcon from '@mui/icons-material/Verified';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import Navbar from '../components/Navbar';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+import { API_BASE_URL as API_URL } from '../utils/api';
 
 const branches = [
   { code: 'CSE', name: 'Computer Science and Engineering' },

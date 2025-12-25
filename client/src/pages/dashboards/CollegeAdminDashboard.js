@@ -123,7 +123,7 @@ const CollegeAdminDashboard = () => {
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 8 }}>
       <Navbar title="Administration Control" />
 
-      <Container maxWidth="lg" sx={{ mt: { xs: 4, md: 6 } }}>
+      <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 4 } }}>
         <Box sx={{ mb: 6 }}>
           <Typography variant="h3" sx={{ fontWeight: 800, mb: 1, letterSpacing: '-0.025em' }}>
             Institutional Administration

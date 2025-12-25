@@ -41,7 +41,7 @@ const Navbar = ({ title }) => {
   const handleLogout = async () => {
     handleClose();
     await logout();
-    navigate('/login');
+    navigate('/');
   };
 
   const getDashboardPath = () => {

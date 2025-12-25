@@ -64,7 +64,7 @@ const Landing = () => {
       <Box
         className="bg-image-overlay"
         sx={{
-          pt: { xs: 6, md: 10 },
+          pt: { xs: 2, md: 4 },
           pb: { xs: 8, md: 12 },
           minHeight: '80vh',
           display: 'flex',

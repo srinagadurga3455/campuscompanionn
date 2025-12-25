@@ -57,7 +57,7 @@ const Login = () => {
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', position: 'relative', overflow: 'hidden' }}>
       <Navbar />
 
-      <Container maxWidth="sm" sx={{ py: { xs: 8, md: 12 }, position: 'relative', zIndex: 1 }}>
+      <Container maxWidth="sm" sx={{ py: { xs: 4, md: 6 }, position: 'relative', zIndex: 1 }}>
         <Paper
           className="saas-card"
           elevation={0}

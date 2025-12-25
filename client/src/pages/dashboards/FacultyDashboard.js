@@ -71,7 +71,7 @@ const FacultyDashboard = () => {
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', pb: 8 }}>
       <Navbar title="Faculty Workspace" />
 
-      <Container maxWidth="lg" sx={{ mt: { xs: 4, md: 6 } }}>
+      <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 4 } }}>
         {/* Workspace Header */}
         <Paper
           elevation={0}
